@@ -1,0 +1,4 @@
+com/example/inventory/InventoryModule.class
+com/example/inventory/model/InventoryItem.class
+com/example/inventory/controller/InventoryController.class
+com/example/inventory/repository/InventoryRepository.class
