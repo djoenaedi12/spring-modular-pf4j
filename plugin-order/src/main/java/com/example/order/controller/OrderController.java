@@ -17,11 +17,14 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
+    private final PluginManager pluginManager;
 
-    @Autowired(required = false)
-    private PluginManager pluginManager;
+    public OrderController(OrderService orderService,
+                           @Autowired(required = false) PluginManager pluginManager) {
+        this.orderService = orderService;
+        this.pluginManager = pluginManager;
+    }
 
     // =========================================================
     // INTERFACE APPROACH (Recommended)

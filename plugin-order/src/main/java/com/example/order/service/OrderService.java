@@ -12,15 +12,20 @@ import java.util.List;
 @Service
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
 
     /**
      * PluginManager digunakan untuk mendapatkan implementasi InventoryCheckExtension
      * yang di-provide oleh plugin-inventory saat runtime.
+     * Nullable karena tidak tersedia saat mode standalone.
      */
-    @Autowired(required = false)
-    private PluginManager pluginManager;
+    private final PluginManager pluginManager;
+
+    public OrderService(OrderRepository orderRepository,
+                        @Autowired(required = false) PluginManager pluginManager) {
+        this.orderRepository = orderRepository;
+        this.pluginManager = pluginManager;
+    }
 
     public Order createOrder(Long itemId, int quantity) {
         // Cek stok via InventoryCheckExtension dari plugin-inventory

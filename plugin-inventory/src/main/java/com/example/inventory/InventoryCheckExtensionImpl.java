@@ -5,7 +5,7 @@ import com.example.api.InventoryItemDTO;
 import com.example.inventory.model.InventoryItem;
 import com.example.inventory.repository.InventoryRepository;
 import org.pf4j.Extension;
-import org.springframework.beans.factory.annotation.Autowired;
+
 
 import java.util.Optional;
 
@@ -16,8 +16,11 @@ import java.util.Optional;
 @Extension
 public class InventoryCheckExtensionImpl implements InventoryCheckExtension {
 
-    @Autowired
-    private InventoryRepository inventoryRepository;
+    private final InventoryRepository inventoryRepository;
+
+    public InventoryCheckExtensionImpl(InventoryRepository inventoryRepository) {
+        this.inventoryRepository = inventoryRepository;
+    }
 
     @Override
     public boolean isStockAvailable(Long itemId, int quantity) {
