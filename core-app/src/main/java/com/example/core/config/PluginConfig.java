@@ -1,17 +1,15 @@
 package com.example.core.config;
 
-import org.pf4j.spring.SpringPluginManager;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import java.nio.file.Paths;
 
+/**
+ * Konfigurasi terkait plugin.
+ *
+ * PluginManager sekarang dibuat di CoreApplication.main() SEBELUM Spring Boot
+ * start, agar composite classloader bisa disiapkan terlebih dahulu.
+ * PluginManager sudah di-register sebagai singleton bean di sana.
+ */
 @Configuration
 public class PluginConfig {
-
-    @Bean
-    public SpringPluginManager pluginManager() {
-        // Secara default akan mencari folder "plugins" di root project
-        // Anda bisa custom lokasinya di sini jika mau
-        return new SpringPluginManager(Paths.get("plugins"));
-    }
+    // Konfigurasi tambahan plugin bisa ditambahkan di sini
 }
