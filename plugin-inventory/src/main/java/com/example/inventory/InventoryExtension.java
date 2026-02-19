@@ -2,7 +2,10 @@ package com.example.inventory;
 
 import com.example.api.AppExtension;
 import com.example.api.FlywayMigrationExtension;
+import com.example.api.I18nExtension;
 import org.pf4j.Extension;
+
+import java.util.List;
 
 /**
  * Extension utama plugin inventory.
@@ -12,7 +15,7 @@ import org.pf4j.Extension;
  * - Basename i18n (I18nExtension)
  */
 @Extension
-public class InventoryExtension implements AppExtension, FlywayMigrationExtension {
+public class InventoryExtension implements AppExtension, FlywayMigrationExtension, I18nExtension {
 
     @Override
     public String getModuleName() {
@@ -31,5 +34,14 @@ public class InventoryExtension implements AppExtension, FlywayMigrationExtensio
     @Override
     public String getMigrationLocation() {
         return "classpath:db/migration/inventory";
+    }
+
+    /**
+     * Basename file message bundle plugin ini.
+     * Konvensi: messages/<nama-plugin>.properties
+     */
+    @Override
+    public List<String> getMessageBasenames() {
+        return List.of("classpath:messages/inventory");
     }
 }
