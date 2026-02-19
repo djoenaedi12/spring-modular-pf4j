@@ -19,6 +19,7 @@
         <module>plugins-api</module>
         <module>core-app</module>
         <module>plugin-inventory</module>
+        <module>plugin-order</module>
     </modules>
 
     <properties>
