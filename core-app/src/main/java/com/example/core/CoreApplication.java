@@ -1,9 +1,7 @@
 package com.example.core;
 
-import com.example.api.PluginModule;
 import com.example.core.classloader.CompositeClassLoader;
 import org.pf4j.DefaultPluginManager;
-import org.pf4j.Plugin;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
 import org.springframework.boot.CommandLineRunner;
@@ -22,9 +20,6 @@ import java.util.List;
 @EnableJpaRepositories(basePackages = "com.example")
 @SpringBootApplication(scanBasePackages = "com.example")
 public class CoreApplication {
-
-    // @Autowired
-    // PluginManager pluginManager;
 
     public static void main(String[] args) {
         // ===== LANGKAH 1: Load plugin SEBELUM Spring ===========================
@@ -84,13 +79,6 @@ public class CoreApplication {
             } else {
                 System.out.println("STATUS: Berhasil memuat " + startedPlugins.size() + " plugin.");
                 for (PluginWrapper plugin : startedPlugins) {
-
-                    Plugin plug = plugin.getPlugin();
-
-                    if (plug instanceof PluginModule pm) {
-                        pm.init(":");
-                    }
-
                     System.out.println("----------------------------------------------");
                     System.out.println("ID Plugin      : " + plugin.getPluginId());
                     System.out.println("Versi          : " + plugin.getDescriptor().getVersion());
