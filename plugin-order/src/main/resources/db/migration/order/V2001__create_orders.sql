@@ -3,7 +3,7 @@
 -- Version range: V2001 – V2999
 -- ============================================================
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id               BIGINT AUTO_INCREMENT PRIMARY KEY,
     inventory_item_id BIGINT       NOT NULL,  -- referensi cross-plugin ke inventory_items.id
     quantity         INT           NOT NULL,
