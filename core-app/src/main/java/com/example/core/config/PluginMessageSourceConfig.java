@@ -14,19 +14,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Membuat MessageSource gabungan (shared core + tiap plugin).
+ * Configuration that builds a composite {@link MessageSource} by merging
+ * message bundles from all loaded plugins with the core application messages.
  *
- * Urutan resolve pesan:
- * 1. Cari di message bundle plugin yang terdaftar (plugin-specific)
- * 2. Fallback ke shared messages di core-app (messages.properties)
+ * <p>
+ * <strong>Message resolution order:</strong>
+ * </p>
+ * <ol>
+ * <li>Plugin-specific message bundles (registered via
+ * {@link I18nExtension})</li>
+ * <li>Core shared messages ({@code messages/core.properties}) as fallback</li>
+ * </ol>
  *
- * Dengan cara ini plugin bisa meng-override key shared jika diperlukan.
+ * <p>
+ * This allows plugins to define their own message keys and optionally
+ * override shared keys from the core application.
+ * </p>
+ *
+ * @see I18nExtension
+ * @since 1.0.0
  */
 @Configuration
 public class PluginMessageSourceConfig {
 
     private static final Logger log = LoggerFactory.getLogger(PluginMessageSourceConfig.class);
 
+    /**
+     * Creates a {@link ReloadableResourceBundleMessageSource} that combines
+     * message basenames from all plugins with the core application's basenames.
+     *
+     * @param pluginManager the PF4J plugin manager used to discover
+     *                      {@link I18nExtension} implementations
+     * @return the composite {@link MessageSource}
+     */
     @Bean
     public MessageSource messageSource(PluginManager pluginManager) {
         List<String> basenames = new ArrayList<>();

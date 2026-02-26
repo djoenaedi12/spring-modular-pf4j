@@ -15,16 +15,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Menjalankan Flyway migration untuk core-app DAN semua plugin yang
- * mengimplementasikan {@link FlywayMigrationExtension}.
+ * Configuration that runs Flyway database migrations for the core application
+ * and all plugins implementing {@link FlywayMigrationExtension}.
  *
- * Strategi single table + version range:
- * - Core : V1 – V999 (lokasi: classpath:db/migration/core)
- * - Inventory: V1001 – V1999 (lokasi: classpath:db/migration/inventory)
- * - Product : V2001 – V2999 (lokasi: classpath:db/migration/product)
+ * <p>
+ * Uses a <strong>single Flyway instance</strong> with merged migration
+ * locations and a shared {@code flyway_schema_history} table.
+ * </p>
  *
- * Semua migration dijalankan dalam SATU Flyway instance dengan lokasi gabungan,
- * menggunakan satu tabel "flyway_schema_history".
+ * <p>
+ * <strong>Version range convention:</strong>
+ * </p>
+ * <ul>
+ * <li>core-app &mdash; V1 – V999 ({@code classpath:db/migration/core})</li>
+ * <li>inventory &mdash; V1001 – V1999
+ * ({@code classpath:db/migration/inventory})</li>
+ * <li>product &mdash; V2001 – V2999
+ * ({@code classpath:db/migration/product})</li>
+ * </ul>
+ *
+ * @see FlywayMigrationExtension
+ * @since 1.0.0
  */
 @Configuration
 public class PluginFlywayConfig {
@@ -32,16 +43,18 @@ public class PluginFlywayConfig {
     private static final Logger log = LoggerFactory.getLogger(PluginFlywayConfig.class);
 
     /**
-     * Order(1) agar migration selesai sebelum Hibernate validate schema.
-     * Hibernate validate dijalankan setelah context refresh, sedangkan
-     * CommandLineRunner dijalankan setelahnya — tapi karena ddl-auto=validate
-     * terjadi saat konteks start, kita perlu Flyway jalan lebih awal.
+     * Creates a {@link CommandLineRunner} that executes Flyway migrations from
+     * all registered locations (core + plugins).
      *
-     * Solusi: kita memastikan migration dijalankan SEBELUM EntityManagerFactory
-     * dengan cara manual Flyway di sini dan DDL-auto=none sebagai alternatif,
-     * atau pakai BeanFactoryPostProcessor. Untuk simplisitas, gunakan
-     * ddl-auto=update
-     * di standalone dan validate di core.
+     * <p>
+     * Ordered with {@code @Order(1)} to ensure migrations complete before
+     * Hibernate schema validation runs.
+     * </p>
+     *
+     * @param dataSource    the application's {@link DataSource}
+     * @param pluginManager the PF4J plugin manager for discovering migration
+     *                      extensions
+     * @return a runner that performs the combined Flyway migration
      */
     @Bean
     @Order(1)
