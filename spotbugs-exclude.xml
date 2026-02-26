@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+    <!--
+        SpotBugs exclude filter for Spring Boot + PF4J project.
+        Suppresses common false positives in Spring-managed code.
+    -->
+
+    <!-- Spring Boot main class: bootstrap code -->
+    <Match>
+        <Class name="~.*Application"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
+
+    <!-- Spring @Autowired / @Value field injection is expected -->
+    <Match>
+        <Bug pattern="URF_UNREAD_FIELD,UWF_UNWRITTEN_FIELD,SS_SHOULD_BE_STATIC"/>
+    </Match>
+
+    <!-- Spring @Configuration beans: return values managed by container -->
+    <Match>
+        <Class name="~.*Config"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+    </Match>
+
+    <!-- Records and DTOs: immutable data carriers -->
+    <Match>
+        <Class name="~.*DTO|.*Request|.*Response|.*Info"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,MS_EXPOSE_REP"/>
+    </Match>
+
+    <!-- Logger fields: static final Logger is fine with non-static name -->
+    <Match>
+        <Bug pattern="SLF4J_LOGGER_SHOULD_BE_NON_STATIC"/>
+    </Match>
+
+    <!-- Generated code (Lombok, MapStruct, etc.) -->
+    <Match>
+        <Source name="~.*generated.*"/>
+    </Match>
+
+    <!-- Serialization: Spring beans don't need serialVersionUID -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD,SE_NO_SERIALVERSIONID"/>
+        <Class name="~.*Controller|.*Service|.*Repository|.*Config"/>
+    </Match>
+
+    <!-- Spring DI: constructor injection stores shared Spring-managed singletons -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*Controller|.*Service"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+
+    <!-- ClassLoader: custom classloaders intentionally override protected methods -->
+    <Match>
+        <Class name="~.*ClassLoader"/>
+        <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
+    </Match>
+
+</FindBugsFilter>

@@ -23,7 +23,7 @@
     </modules>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>21</java.version>
         <pf4j-spring.version>0.10.0</pf4j-spring.version>
     </properties>
 
@@ -66,6 +66,29 @@
                     <executions>
                         <execution>
                             <id>checkstyle-check</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- SpotBugs: static analysis for bug detection -->
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>4.9.3.0</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Medium</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <includeTests>false</includeTests>
+                        <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>spotbugs-check</id>
                             <phase>verify</phase>
                             <goals>
                                 <goal>check</goal>
