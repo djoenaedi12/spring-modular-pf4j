@@ -40,7 +40,7 @@ import java.util.List;
 @Configuration
 public class PluginFlywayConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(PluginFlywayConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PluginFlywayConfig.class);
 
     /**
      * Creates a {@link CommandLineRunner} that executes Flyway migrations from
@@ -69,10 +69,10 @@ public class PluginFlywayConfig {
             for (FlywayMigrationExtension ext : extensions) {
                 String location = ext.getMigrationLocation();
                 locations.add(location);
-                log.info("[Flyway] Plugin migration location registered: {}", location);
+                LOG.info("[Flyway] Plugin migration location registered: {}", location);
             }
 
-            log.info("[Flyway] Running migrations from {} location(s): {}", locations.size(), locations);
+            LOG.info("[Flyway] Running migrations from {} location(s): {}", locations.size(), locations);
 
             Flyway flyway = Flyway.configure()
                     .dataSource(dataSource)
@@ -83,7 +83,7 @@ public class PluginFlywayConfig {
                     .load();
 
             int applied = flyway.migrate().migrationsExecuted;
-            log.info("[Flyway] Migration selesai. {} script dijalankan.", applied);
+            LOG.info("[Flyway] Migration selesai. {} script dijalankan.", applied);
         };
     }
 }

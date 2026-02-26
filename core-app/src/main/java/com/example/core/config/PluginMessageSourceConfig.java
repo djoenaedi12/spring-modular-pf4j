@@ -37,7 +37,7 @@ import java.util.List;
 @Configuration
 public class PluginMessageSourceConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(PluginMessageSourceConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PluginMessageSourceConfig.class);
 
     /**
      * Creates a {@link ReloadableResourceBundleMessageSource} that combines
@@ -56,13 +56,13 @@ public class PluginMessageSourceConfig {
         for (I18nExtension ext : extensions) {
             List<String> pluginBasenames = ext.getMessageBasenames();
             basenames.addAll(pluginBasenames);
-            log.info("[i18n] Plugin message basenames registered: {}", pluginBasenames);
+            LOG.info("[i18n] Plugin message basenames registered: {}", pluginBasenames);
         }
 
         // Shared messages dari core selalu jadi fallback (ditambah terakhir)
         basenames.add("classpath:messages/core");
 
-        log.info("[i18n] Total message basenames: {}", basenames);
+        LOG.info("[i18n] Total message basenames: {}", basenames);
 
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         messageSource.setBasenames(basenames.toArray(new String[0]));

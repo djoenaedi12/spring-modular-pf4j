@@ -42,7 +42,7 @@ public class CoreController {
      * <p>
      * Example response:
      * </p>
-     * 
+     *
      * <pre>{@code
      * {
      *   "status": "UP",

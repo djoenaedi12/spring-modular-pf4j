@@ -29,7 +29,7 @@ package com.example.api.model;
  * <p>
  * <strong>Usage Example:</strong>
  * </p>
- * 
+ *
  * <pre>{@code
  * // Creating a new ModuleInfo instance
  * ModuleInfo inventoryModule = new ModuleInfo("Inventory", "Manages stock and products", "1.0.0");

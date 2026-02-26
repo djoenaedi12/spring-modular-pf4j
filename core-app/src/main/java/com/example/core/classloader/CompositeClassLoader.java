@@ -2,7 +2,12 @@ package com.example.core.classloader;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A composite {@link ClassLoader} that delegates class and resource lookups

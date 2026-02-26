@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+    Checkstyle configuration aligned with Clean Architecture best practices.
+    Enforces: small focused classes, low complexity, proper naming,
+    dependency direction, and code hygiene.
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="warning"/>
+
+    <!-- ==================== File-level Checks ==================== -->
+
+    <!-- Clean Architecture: classes should be small and focused (SRP) -->
+    <module name="FileLength">
+        <property name="max" value="300"/>
+        <message key="maxLen.file"
+                 value="File exceeds 300 lines. Consider splitting into smaller, single-responsibility classes."/>
+    </module>
+
+    <!-- No trailing whitespace -->
+    <module name="RegexpSingleline">
+        <property name="format" value="\s+$"/>
+        <property name="message" value="Line has trailing whitespace."/>
+    </module>
+
+    <!-- No tab characters — use spaces -->
+    <module name="FileTabCharacter"/>
+
+    <!-- Line length: keep readable -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a]? href|href|http://|https://|ftp://"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- ==================== Naming Conventions ==================== -->
+        <!-- Clean code: names should reveal intent -->
+
+        <module name="TypeName">
+            <message key="name.invalidPattern"
+                     value="Type name ''{0}'' must use UpperCamelCase."/>
+        </module>
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+            <message key="name.invalidPattern"
+                     value="Member name ''{0}'' must use lowerCamelCase."/>
+        </module>
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+            <message key="name.invalidPattern"
+                     value="Method name ''{0}'' must use lowerCamelCase."/>
+        </module>
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="LocalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="ConstantName">
+            <message key="name.invalidPattern"
+                     value="Constant ''{0}'' must use UPPER_SNAKE_CASE."/>
+        </module>
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+
+        <!-- ==================== Imports ==================== -->
+        <!-- Clean code: no unnecessary dependencies -->
+
+        <module name="AvoidStarImport"/>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+
+        <!-- ==================== Class Design (Clean Architecture) ==================== -->
+        <!-- SRP: small methods, small parameter lists, low coupling -->
+
+        <!-- Methods should be short and focused -->
+        <module name="MethodLength">
+            <property name="max" value="40"/>
+            <message key="maxLen.method"
+                     value="Method exceeds 40 lines. Break it into smaller methods with clear responsibilities."/>
+        </module>
+
+        <!-- Too many parameters = too many responsibilities -->
+        <module name="ParameterNumber">
+            <property name="max" value="5"/>
+            <property name="ignoreOverriddenMethods" value="true"/>
+            <message key="maxParam"
+                     value="Method has {0,number,integer} parameters (max 5). Consider using a parameter object or builder."/>
+        </module>
+
+        <!-- Low cyclomatic complexity = easier to test and maintain -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="10"/>
+            <message key="cyclomaticComplexity"
+                     value="Cyclomatic complexity is {0,number,integer} (max 10). Simplify by extracting methods or using polymorphism."/>
+        </module>
+
+        <!-- Limit class fan-out (dependencies) — Dependency Rule -->
+        <module name="ClassFanOutComplexity">
+            <property name="max" value="15"/>
+            <message key="classFanOutComplexity"
+                     value="Class depends on {0,number,integer} other classes (max 15). Reduce coupling by using interfaces or splitting responsibilities."/>
+        </module>
+
+        <!-- Limit method coupling -->
+        <module name="ClassDataAbstractionCoupling">
+            <property name="max" value="10"/>
+            <message key="classDataAbstractionCoupling"
+                     value="Class instantiates {0,number,integer} other classes (max 10). Use dependency injection instead of direct instantiation."/>
+        </module>
+
+        <!-- Boolean complexity → too many conditions = needs refactoring -->
+        <module name="BooleanExpressionComplexity">
+            <property name="max" value="4"/>
+        </module>
+
+        <!-- ==================== Code Quality ==================== -->
+
+        <module name="EmptyBlock">
+            <property name="option" value="TEXT"/>
+            <property name="tokens" value="LITERAL_CATCH"/>
+            <message key="block.empty"
+                     value="Empty catch block. Add a comment explaining why the exception is ignored, or handle it."/>
+        </module>
+        <module name="NeedBraces"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="FallThrough"/>
+        <module name="UpperEll"/>
+        <module name="ModifierOrder"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="StringLiteralEquality"/>
+        <module name="InnerAssignment"/>
+        <module name="OneTopLevelClass"/>
+
+        <!-- Avoid magic numbers — use named constants -->
+        <module name="MagicNumber">
+            <property name="severity" value="info"/>
+            <property name="ignoreNumbers" value="-1, 0, 1, 2"/>
+            <property name="ignoreAnnotation" value="true"/>
+        </module>
+
+        <!-- ==================== Whitespace ==================== -->
+
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+
+        <!-- ==================== Javadoc ==================== -->
+        <!-- Clean Architecture: public APIs must be documented -->
+
+        <module name="JavadocType">
+            <property name="severity" value="info"/>
+            <property name="scope" value="public"/>
+        </module>
+        <module name="JavadocMethod">
+            <property name="severity" value="info"/>
+            <property name="accessModifiers" value="public"/>
+        </module>
+
+    </module>
+</module>

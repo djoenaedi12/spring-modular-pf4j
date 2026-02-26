@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+    Checkstyle suppressions for rules that are intentionally skipped
+    in specific files or packages.
+-->
+<suppressions>
+
+    <!-- Main application class: bootstrap code with higher complexity -->
+    <suppress checks="CyclomaticComplexity|MethodLength|ClassFanOutComplexity"
+              files="CoreApplication\.java"/>
+
+    <!-- Configuration classes: wiring code naturally has more dependencies -->
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
+              files=".*Config\.java"/>
+
+    <!-- Spring controllers may have more parameters in handler methods -->
+    <suppress checks="ParameterNumber"
+              files=".*Controller\.java"/>
+
+    <!-- Magic numbers in migration version checks are acceptable -->
+    <suppress checks="MagicNumber"
+              files=".*Config\.java"/>
+
+    <!-- Records and DTOs: simple data carriers don't need method Javadoc -->
+    <suppress checks="JavadocMethod"
+              files=".*DTO\.java|.*Request\.java|.*Response\.java"/>
+
+</suppressions>
