@@ -29,4 +29,8 @@
     <suppress checks="JavadocMethod"
               files=".*DTO\.java|.*Request\.java|.*Response\.java"/>
 
+    <!-- Specification: switch over enum operators naturally exceeds complexity limit -->
+    <suppress checks="CyclomaticComplexity"
+              files="GenericSpecification\.java"/>
+
 </suppressions>

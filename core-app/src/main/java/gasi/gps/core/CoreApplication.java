@@ -1,6 +1,9 @@
 package gasi.gps.core;
 
-import gasi.gps.core.classloader.CompositeClassLoader;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
@@ -12,9 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import gasi.gps.core.infrastructure.classloader.CompositeClassLoader;
 
 /**
  * Main entry point for the modular Spring Boot application.
@@ -42,9 +43,9 @@ import java.util.List;
  * @see org.pf4j.DefaultPluginManager
  * @since 1.0.0
  */
-@EntityScan(basePackages = "com.example")
-@EnableJpaRepositories(basePackages = "com.example")
-@SpringBootApplication(scanBasePackages = "com.example")
+@EntityScan(basePackages = "gasi.gps")
+@EnableJpaRepositories(basePackages = "gasi.gps")
+@SpringBootApplication(scanBasePackages = "gasi.gps")
 public class CoreApplication {
 
     /**
