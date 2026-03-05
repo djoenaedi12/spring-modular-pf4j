@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import gasi.gps.core.api.application.exception.BusinessException;
 import gasi.gps.core.api.domain.model.AndFilter;
 import gasi.gps.core.api.domain.model.GenericFilter;
 import gasi.gps.core.api.domain.model.OrFilter;
@@ -62,6 +63,13 @@ public class GenericSpecification<T> implements Specification<T> {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Predicate buildSimplePredicate(SimpleFilter sf, Root<T> root, CriteriaBuilder cb) {
+        if (sf.getField() == null || sf.getField().isBlank()) {
+            throw new BusinessException("Filter 'field' is required");
+        }
+        if (sf.getOperator() == null) {
+            throw new BusinessException("Filter 'operator' is required");
+        }
+
         String field = sf.getField();
         Object value = sf.getValue();
 

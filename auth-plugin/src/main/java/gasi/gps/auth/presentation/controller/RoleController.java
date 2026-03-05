@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/api/v1/roles")
 public class RoleController extends
         BaseController<Role, RoleCreateRequest, RoleUpdateRequest, RoleSummaryResponse, RoleDetailResponse> {
 

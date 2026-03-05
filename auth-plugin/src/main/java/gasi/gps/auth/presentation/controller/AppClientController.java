@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/app-clients")
+@RequestMapping("/api/v1/app-clients")
 public class AppClientController extends
         BaseController<AppClient, AppClientCreateRequest, AppClientUpdateRequest, AppClientSummaryResponse, AppClientDetailResponse> {
 

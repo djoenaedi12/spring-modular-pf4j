@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 public class UserController extends
         BaseController<User, UserCreateRequest, UserUpdateRequest, UserSummaryResponse, UserDetailResponse> {
 

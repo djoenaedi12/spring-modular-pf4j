@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/menus")
+@RequestMapping("/api/v1/menus")
 public class MenuController extends
         BaseController<Menu, MenuCreateRequest, MenuUpdateRequest, MenuSummaryResponse, MenuDetailResponse> {
 

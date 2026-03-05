@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/manage")
 public class CoreController {
 
     private final PluginManager pluginManager;

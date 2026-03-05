@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/resources")
+@RequestMapping("/api/v1/resources")
 public class ResourceController extends
         BaseController<Resource, ResourceCreateRequest, ResourceUpdateRequest, ResourceSummaryResponse, ResourceDetailResponse> {
 

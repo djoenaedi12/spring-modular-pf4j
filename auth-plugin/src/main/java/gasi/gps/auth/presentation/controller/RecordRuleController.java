@@ -13,7 +13,7 @@ import gasi.gps.core.api.infrastructure.util.IdEncoder;
 import gasi.gps.core.api.presentation.controller.BaseController;
 
 @RestController
-@RequestMapping("/api/record-rules")
+@RequestMapping("/api/v1/record-rules")
 public class RecordRuleController extends
         BaseController<RecordRule, RecordRuleCreateRequest, RecordRuleUpdateRequest, RecordRuleSummaryResponse, RecordRuleDetailResponse> {
 
