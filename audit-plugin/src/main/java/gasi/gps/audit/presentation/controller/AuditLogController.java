@@ -15,4 +15,9 @@ public class AuditLogController extends
     public AuditLogController(AuditLogService service, IdEncoder idEncoder) {
         super(service, idEncoder);
     }
+
+    @Override
+    public String getResourceName() {
+        return "AuditLog";
+    }
 }

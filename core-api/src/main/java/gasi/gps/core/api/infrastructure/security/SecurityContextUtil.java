@@ -11,11 +11,11 @@ package gasi.gps.core.api.infrastructure.security;
 public interface SecurityContextUtil {
 
     /**
-     * Get current authenticated user's ID.
+     * Get current authenticated user's username.
      *
-     * @return user ID, or {@code null} if not authenticated
+     * @return username, or {@code null} if not authenticated
      */
-    String getCurrentUserId();
+    String getCurrentUsername();
 
     /**
      * Get current user's role / primary authority.
@@ -30,4 +30,11 @@ public interface SecurityContextUtil {
      * @return IP address, or {@code null} if unavailable
      */
     String getCurrentIp();
+
+    /**
+     * Get user agent from the current HTTP request.
+     *
+     * @return user agent string, or {@code null} if unavailable
+     */
+    String getCurrentUserAgent();
 }

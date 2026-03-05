@@ -1,5 +1,6 @@
 package gasi.gps.auth.domain.port.inbound;
 
+import gasi.gps.auth.application.dto.LoginRequest;
 import gasi.gps.auth.application.dto.LoginResponse;
 
 /**
@@ -8,19 +9,25 @@ import gasi.gps.auth.application.dto.LoginResponse;
 public interface AuthService {
 
     /**
-     * Authenticate a user with username and password.
+     * Authenticate a user with LoginRequest details.
      *
-     * @param username the username
-     * @param password the raw password
+     * @param request the login request containing credentials and device metadata
      * @return login response containing tokens
      */
-    LoginResponse login(String username, String password);
+    LoginResponse login(LoginRequest request);
 
     /**
-     * Refresh an access token using a refresh token.
+     * Authenticate a user with client credentials (Basic Auth).
      *
-     * @param refreshToken the refresh token
-     * @return new login response with fresh tokens
+     * <p>
+     * Validates the client's {@code clientSecret}, checks that the requested
+     * {@code grantType} is allowed, and generates tokens with the client's
+     * configured expiry and scopes.
+     *
+     * @param clientId     the client identifier from Basic Auth
+     * @param clientSecret the client secret from Basic Auth
+     * @param request      login request containing grantType, username, password
+     * @return login response containing tokens and scopes
      */
-    LoginResponse refreshToken(String refreshToken);
+    LoginResponse login(String clientId, String clientSecret, LoginRequest request);
 }

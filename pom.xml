@@ -19,6 +19,7 @@
         <module>core-api</module>
         <module>audit-plugin</module>
         <module>auth-plugin</module>
+        <module>ldap-plugin</module>
         <module>core-app</module>
     </modules>
 

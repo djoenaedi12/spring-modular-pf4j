@@ -15,10 +15,10 @@ public class AuditLogServiceImpl extends
         BaseServiceImpl<AuditLog, AuditLogCreateRequest, AuditLogUpdateRequest, AuditLogSummaryResponse, AuditLogDetailResponse>
         implements AuditLogService {
 
-    public AuditLogServiceImpl(AuditLogRepositoryPort repository,
+    public AuditLogServiceImpl(AuditLogRepositoryPort repositoryPort,
             AuditLogDtoMapper mapper,
             MessageUtil messageUtil) {
-        super(repository, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil);
     }
 
     @Override

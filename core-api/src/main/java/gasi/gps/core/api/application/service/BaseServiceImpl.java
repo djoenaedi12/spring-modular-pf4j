@@ -31,14 +31,14 @@ import gasi.gps.core.api.infrastructure.i18n.MessageUtil;
 public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
         implements BaseService<D, CRQ, URQ, SRS, DRS> {
 
-    protected final BaseRepositoryPort<D> repository;
+    protected final BaseRepositoryPort<D> repositoryPort;
     protected final BaseDtoMapper<D, CRQ, URQ, SRS, DRS> mapper;
     protected final MessageUtil messageUtil;
 
-    protected BaseServiceImpl(BaseRepositoryPort<D> repository,
+    protected BaseServiceImpl(BaseRepositoryPort<D> repositoryPort,
             BaseDtoMapper<D, CRQ, URQ, SRS, DRS> mapper,
             MessageUtil messageUtil) {
-        this.repository = repository;
+        this.repositoryPort = repositoryPort;
         this.mapper = mapper;
         this.messageUtil = messageUtil;
     }
@@ -46,13 +46,13 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     public DRS create(CRQ request) {
         validateCreate(request);
         D domain = mapper.toCreateDomain(request);
-        D saved = repository.save(domain);
+        D saved = repositoryPort.save(domain);
         return mapper.toDetail(saved);
     }
 
     @Transactional(readOnly = true)
     public DRS findById(Long id) {
-        D domain = repository.findById(id)
+        D domain = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), id)));
         return mapper.toDetail(domain);
@@ -60,7 +60,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
 
     @Transactional(readOnly = true)
     public DRS findBy(GenericFilter filter) {
-        D domain = repository.findBy(filter)
+        D domain = repositoryPort.findBy(filter)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), "filter")));
         return mapper.toDetail(domain);
@@ -68,7 +68,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
 
     @Transactional(readOnly = true)
     public List<SRS> findAll(GenericFilter filter, List<SortOrder> orders) {
-        List<D> result = repository.findAll(filter, orders);
+        List<D> result = repositoryPort.findAll(filter, orders);
         return result.stream()
                 .map(mapper::toSummary)
                 .collect(Collectors.toList());
@@ -76,7 +76,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
 
     @Transactional(readOnly = true)
     public PageResult<SRS> findAll(int page, int size, GenericFilter filter, List<SortOrder> orders) {
-        PageResult<D> result = repository.findAll(page, size, filter, orders);
+        PageResult<D> result = repositoryPort.findAll(page, size, filter, orders);
         List<SRS> content = result.getContent().stream()
                 .map(mapper::toSummary)
                 .collect(Collectors.toList());
@@ -90,21 +90,21 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     }
 
     public DRS update(Long id, URQ request) {
-        D existing = repository.findById(id)
+        D existing = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), id)));
         validateUpdate(id, request);
         mapper.updateDomain(request, existing);
-        D saved = repository.save(existing);
+        D saved = repositoryPort.save(existing);
         return mapper.toDetail(saved);
     }
 
     public void delete(Long id) {
-        repository.findById(id)
+        repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), id)));
         validateDelete(id);
-        repository.delete(id);
+        repositoryPort.delete(id);
     }
 
     protected void validateCreate(CRQ request) {

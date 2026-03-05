@@ -1,6 +1,7 @@
 package gasi.gps.auth.domain.model;
 
 import gasi.gps.core.api.domain.model.BaseModel;
+import gasi.gps.core.api.domain.model.Platform;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,8 +25,8 @@ public class Menu extends BaseModel {
     private String path;
     private String icon;
     private Integer sortOrder;
-    private String type;
-    private String platform;
+    private MenuType type;
+    private Platform platform;
     private String module;
     private Boolean isVisible;
     private String helpUrl;

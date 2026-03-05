@@ -1,5 +1,9 @@
 package gasi.gps.auth.application.dto;
 
+import java.util.List;
+import java.util.Set;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -27,4 +31,12 @@ public class RoleUpdateRequest {
     @NotBlank
     @Size(max = 255)
     private String description;
+
+    @Valid
+    private List<PermissionRequest> permissions;
+
+    @Valid
+    private List<RoleRecordRuleRequest> recordRules;
+
+    private Set<String> menuIds;
 }

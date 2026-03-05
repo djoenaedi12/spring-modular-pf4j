@@ -90,7 +90,7 @@ public class AuditEntityAspect {
         try {
             repository.save(AuditLog.builder()
                     .traceId(MDC.get("traceId"))
-                    .actorId(securityContextUtil.getCurrentUserId())
+                    .actorId(securityContextUtil.getCurrentUsername())
                     .actorIp(securityContextUtil.getCurrentIp())
                     .action(action)
                     .category(annotation.category())
@@ -144,7 +144,7 @@ public class AuditEntityAspect {
 
             repository.save(AuditLog.builder()
                     .traceId(MDC.get("traceId"))
-                    .actorId(securityContextUtil.getCurrentUserId())
+                    .actorId(securityContextUtil.getCurrentUsername())
                     .actorIp(securityContextUtil.getCurrentIp())
                     .action(action)
                     .category(annotation.category())

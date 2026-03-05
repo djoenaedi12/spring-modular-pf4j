@@ -20,4 +20,9 @@ public class AppClientController extends
     public AppClientController(AppClientService service, IdEncoder idEncoder) {
         super(service, idEncoder);
     }
+
+    @Override
+    public String getResourceName() {
+        return "AppClient";
+    }
 }

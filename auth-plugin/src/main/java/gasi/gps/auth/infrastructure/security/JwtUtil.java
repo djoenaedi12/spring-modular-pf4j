@@ -28,48 +28,43 @@ public class JwtUtil {
      * Constructs JwtUtil with configurable secret and expiration values.
      */
     public JwtUtil(
-            @Value("${auth.jwt.secret:dGhpcyBpcyBhIHZlcnkgc2VjcmV0IGtleSBmb3Igand0IGF1dGg=}")
-            String secret,
-            @Value("${auth.jwt.access-token-expiration:3600}")
-            long accessTokenExpiration,
-            @Value("${auth.jwt.refresh-token-expiration:86400}")
-            long refreshTokenExpiration) {
+            @Value("${auth.jwt.secret:dGhpcyBpcyBhIHZlcnkgc2VjcmV0IGtleSBmb3Igand0IGF1dGg=}") String secret,
+            @Value("${auth.jwt.access-token-expiration:3600}") long accessTokenExpiration,
+            @Value("${auth.jwt.refresh-token-expiration:86400}") long refreshTokenExpiration) {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
     /**
-     * Generate an access token.
-     *
-     * @param userId   the user's ID
-     * @param username the username
-     * @param roles    the user's role codes
-     * @return JWT access token string
+     * Generate an access token with a specific JTI.
      */
-    public String generateAccessToken(String userId, String username, Set<String> roles) {
-        return Jwts.builder()
-                .subject(userId)
+    public String generateAccessTokenWithJti(String username,
+            Set<String> roles, Set<String> scopes, long expirationSeconds, String jti) {
+        var builder = Jwts.builder()
+                .id(jti)
                 .claim("username", username)
                 .claim("roles", roles)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration * 1000))
-                .signWith(key)
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + expirationSeconds * 1000))
+                .signWith(key);
+
+        if (scopes != null && !scopes.isEmpty()) {
+            builder.claim("scopes", scopes);
+        }
+
+        return builder.compact();
     }
 
     /**
-     * Generate a refresh token.
-     *
-     * @param userId the user's ID
-     * @return JWT refresh token string
+     * Generate a refresh token with a specific JTI.
      */
-    public String generateRefreshToken(String userId) {
+    public String generateRefreshTokenWithJti(long expirationSeconds, String jti) {
         return Jwts.builder()
-                .subject(userId)
+                .id(jti)
                 .claim("type", "refresh")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration * 1000))
+                .expiration(new Date(System.currentTimeMillis() + expirationSeconds * 1000))
                 .signWith(key)
                 .compact();
     }
@@ -115,9 +110,23 @@ public class JwtUtil {
     }
 
     /**
+     * Get the JWT ID (jti) from a token.
+     */
+    public String getJtiFromToken(String token) {
+        return getClaims(token).getId();
+    }
+
+    /**
      * Get access token expiration in seconds.
      */
     public long getAccessTokenExpiration() {
         return accessTokenExpiration;
+    }
+
+    /**
+     * Get refresh token expiration in seconds.
+     */
+    public long getRefreshTokenExpiration() {
+        return refreshTokenExpiration;
     }
 }

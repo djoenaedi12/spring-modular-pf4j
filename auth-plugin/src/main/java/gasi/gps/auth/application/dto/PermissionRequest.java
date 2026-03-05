@@ -7,14 +7,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for refresh token request.
+ * Nested request DTO for creating/updating a permission within a role.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshTokenRequest {
+public class PermissionRequest {
 
     @NotBlank
-    private String refreshToken;
+    private String actionId;
+    @NotBlank
+    private String resourceId;
 }

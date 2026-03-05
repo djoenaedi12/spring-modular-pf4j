@@ -20,4 +20,9 @@ public class UserController extends
     public UserController(UserService service, IdEncoder idEncoder) {
         super(service, idEncoder);
     }
+
+    @Override
+    public String getResourceName() {
+        return "User";
+    }
 }

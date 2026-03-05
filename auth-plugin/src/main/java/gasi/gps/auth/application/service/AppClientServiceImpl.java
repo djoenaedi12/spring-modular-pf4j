@@ -18,10 +18,10 @@ public class AppClientServiceImpl extends
         BaseServiceImpl<AppClient, AppClientCreateRequest, AppClientUpdateRequest, AppClientSummaryResponse, AppClientDetailResponse>
         implements AppClientService {
 
-    public AppClientServiceImpl(AppClientRepositoryPort repository,
+    public AppClientServiceImpl(AppClientRepositoryPort repositoryPort,
             AppClientDtoMapper mapper,
             MessageUtil messageUtil) {
-        super(repository, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil);
     }
 
     @Override

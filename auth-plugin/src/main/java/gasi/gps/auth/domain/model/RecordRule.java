@@ -22,5 +22,5 @@ public class RecordRule extends BaseModel {
     private String description;
     private Resource resource;
     private String conditionExpression;
-    private String url;
+    private String uri;
 }

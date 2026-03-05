@@ -20,4 +20,9 @@ public class RoleController extends
     public RoleController(RoleService service, IdEncoder idEncoder) {
         super(service, idEncoder);
     }
+
+    @Override
+    public String getResourceName() {
+        return "Role";
+    }
 }

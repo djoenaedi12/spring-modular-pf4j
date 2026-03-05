@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class SecurityContextUtilImpl implements SecurityContextUtil {
 
     @Override
-    public String getCurrentUserId() {
+    public String getCurrentUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getDetails() instanceof String) {
             return (String) auth.getDetails();
@@ -36,8 +36,7 @@ public class SecurityContextUtilImpl implements SecurityContextUtil {
 
     @Override
     public String getCurrentIp() {
-        ServletRequestAttributes attrs =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs != null) {
             HttpServletRequest request = attrs.getRequest();
             String forwarded = request.getHeader("X-Forwarded-For");
@@ -45,6 +44,17 @@ public class SecurityContextUtilImpl implements SecurityContextUtil {
                 return forwarded.split(",")[0].trim();
             }
             return request.getRemoteAddr();
+        }
+        return null;
+    }
+
+    @Override
+    public String getCurrentUserAgent() {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            return request.getHeader("User-Agent");
+
         }
         return null;
     }

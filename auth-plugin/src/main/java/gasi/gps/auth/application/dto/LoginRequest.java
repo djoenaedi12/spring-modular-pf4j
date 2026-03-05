@@ -16,8 +16,23 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
     @NotBlank
+    private String grantType;
+
+    private String provider;
+
+    @NotBlank
     private String username;
 
     @NotBlank
     private String password;
+
+    private String deviceId;
+
+    private String deviceModel;
+
+    // Populated by Controller
+    private String ipAddress;
+
+    // Populated by Controller
+    private String userAgent;
 }
