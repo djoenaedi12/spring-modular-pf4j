@@ -3,6 +3,7 @@ package gasi.gps.audit.infrastructure.entity;
 import gasi.gps.core.api.infrastructure.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +18,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "audit_logs")
+@SequenceGenerator(name = "global_seq", sequenceName = "audit_log_seq", allocationSize = 50)
 public class AuditLogEntity extends BaseEntity {
 
     @Column(name = "trace_id")

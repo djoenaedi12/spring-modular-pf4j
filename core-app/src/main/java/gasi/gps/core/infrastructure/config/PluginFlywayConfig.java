@@ -77,7 +77,7 @@ public class PluginFlywayConfig {
             Flyway flyway = Flyway.configure(compositeClassLoader)
                     .dataSource(dataSource)
                     .locations(locations.toArray(new String[0]))
-                    .table("flyway_schema_history")
+                    .table("schema_histories")
                     .mixed(true)
                     .baselineOnMigrate(true)
                     .load();

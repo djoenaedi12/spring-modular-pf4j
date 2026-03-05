@@ -19,6 +19,13 @@ public interface AuditLogSpi {
 
     /**
      * Write a manual audit log entry with module info.
+     *
+     * @param action      the action (CREATE, UPDATE, DELETE, EXPORT, etc.)
+     * @param category    business category
+     * @param module      module name
+     * @param entityType  entity type name
+     * @param entityId    entity identifier
+     * @param description human-readable description
      */
     void log(String action, String category, String module, String entityType, String entityId, String description);
 }

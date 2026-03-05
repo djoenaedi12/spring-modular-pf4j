@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * <p>
  * Example usage:
  * </p>
- * 
+ *
  * <pre>
  * {@code @Auditable(action = "APPROVE", category = "LEAVE",
  *           description = "Approve leave request #{#id}")}

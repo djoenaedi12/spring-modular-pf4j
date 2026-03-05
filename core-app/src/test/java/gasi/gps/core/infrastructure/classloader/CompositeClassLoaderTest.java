@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -257,7 +258,7 @@ class CompositeClassLoaderTest {
 
     private static URL createFakeUrl(String id) {
         try {
-            return new URL("file:///fake/" + id);
+            return URI.create("file:///fake/" + id).toURL();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

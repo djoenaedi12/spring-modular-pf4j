@@ -67,8 +67,9 @@ public class IdEncoder {
 
     @Named("decodeIds")
     public List<Long> decodeList(List<String> encodedIds) {
-        if (encodedIds == null)
+        if (encodedIds == null) {
             return null;
+        }
         return encodedIds.stream()
                 .map(this::decode)
                 .collect(Collectors.toList());
@@ -76,8 +77,9 @@ public class IdEncoder {
 
     @Named("encodeIds")
     public List<String> encodeList(List<Long> ids) {
-        if (ids == null)
+        if (ids == null) {
             return null;
+        }
         return ids.stream()
                 .map(this::encode)
                 .collect(Collectors.toList());

@@ -89,7 +89,9 @@ public class LdapAuthProvider implements AuthProviderExtension {
     }
 
     private String resolveUserDn(LdapConfigService.ActiveLdapConfig config, String username) {
-        try (DirContext serviceContext = openContext(config, config.bindDn(), config.bindPassword())) {
+        DirContext serviceContext = null;
+        try {
+            serviceContext = openContext(config, config.bindDn(), config.bindPassword());
             SearchControls controls = new SearchControls();
             controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
             controls.setReturningAttributes(new String[0]);
@@ -111,16 +113,22 @@ public class LdapAuthProvider implements AuthProviderExtension {
             throw ex;
         } catch (NamingException ex) {
             throw new AuthProviderException("LDAP user lookup failed", ex);
+        } finally {
+            closeQuietly(serviceContext);
         }
     }
 
     private void bindAsUser(LdapConfigService.ActiveLdapConfig config, String userDn, String password) {
-        try (DirContext ignored = openContext(config, userDn, password)) {
+        DirContext ctx = null;
+        try {
+            ctx = openContext(config, userDn, password);
             // successful bind means authentication success
         } catch (AuthenticationException ex) {
             throw new AuthProviderException("Invalid LDAP credentials", ex);
         } catch (NamingException ex) {
             throw new AuthProviderException("LDAP authentication failed", ex);
+        } finally {
+            closeQuietly(ctx);
         }
     }
 
@@ -156,6 +164,16 @@ public class LdapAuthProvider implements AuthProviderExtension {
             return name;
         }
         return name + "," + config.baseDn();
+    }
+
+    private void closeQuietly(DirContext ctx) {
+        if (ctx != null) {
+            try {
+                ctx.close();
+            } catch (NamingException ignored) {
+                // best-effort close
+            }
+        }
     }
 
     private boolean isBlank(String value) {
