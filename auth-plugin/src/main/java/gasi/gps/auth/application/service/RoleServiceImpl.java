@@ -68,7 +68,6 @@ public class RoleServiceImpl extends
     private final ResourceRepositoryPort resourceRepositoryPort;
     private final RecordRuleRepositoryPort recordRuleRepositoryPort;
     private final MenuRepositoryPort menuRepositoryPort;
-    private final IdEncoder idEncoder;
     private final CacheManager cacheManager;
 
     public RoleServiceImpl(RoleRepositoryPort repositoryPort,
@@ -85,7 +84,7 @@ public class RoleServiceImpl extends
             MenuRepositoryPort menuRepositoryPort,
             IdEncoder idEncoder,
             CacheManager cacheManager) {
-        super(repositoryPort, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil, idEncoder);
         this.roleDtoMapper = mapper;
         this.permissionEntityRepository = permissionEntityRepository;
         this.roleRecordRuleEntityRepository = roleRecordRuleEntityRepository;
@@ -97,7 +96,6 @@ public class RoleServiceImpl extends
         this.resourceRepositoryPort = resourceRepositoryPort;
         this.recordRuleRepositoryPort = recordRuleRepositoryPort;
         this.menuRepositoryPort = menuRepositoryPort;
-        this.idEncoder = idEncoder;
         this.cacheManager = cacheManager;
     }
 

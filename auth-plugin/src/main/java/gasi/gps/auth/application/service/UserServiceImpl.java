@@ -33,18 +33,16 @@ public class UserServiceImpl extends
     private final UserRepositoryPort userRepository;
     private final UserDtoMapper userMapper;
     private final RoleRepositoryPort roleRepository;
-    private final IdEncoder idEncoder;
 
     public UserServiceImpl(UserRepositoryPort repository,
             UserDtoMapper mapper,
             RoleRepositoryPort roleRepository,
             MessageUtil messageUtil,
             IdEncoder idEncoder) {
-        super(repository, mapper, messageUtil);
+        super(repository, mapper, messageUtil, idEncoder);
         this.userRepository = repository;
         this.userMapper = mapper;
         this.roleRepository = roleRepository;
-        this.idEncoder = idEncoder;
     }
 
     @Override
@@ -62,7 +60,7 @@ public class UserServiceImpl extends
     public UserDetailResponse update(Long id, UserUpdateRequest request) {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
 
         validateUpdate(id, request);
         userMapper.updateDomain(request, existing);

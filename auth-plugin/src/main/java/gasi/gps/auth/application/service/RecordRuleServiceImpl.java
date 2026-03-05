@@ -26,18 +26,16 @@ public class RecordRuleServiceImpl extends
     private final RecordRuleRepositoryPort recordRuleRepositoryPort;
     private final RecordRuleDtoMapper recordRuleMapper;
     private final ResourceRepositoryPort resourceRepositoryPort;
-    private final IdEncoder idEncoder;
 
     public RecordRuleServiceImpl(RecordRuleRepositoryPort repositoryPort,
             RecordRuleDtoMapper mapper,
             MessageUtil messageUtil,
             ResourceRepositoryPort resourceRepositoryPort,
             IdEncoder idEncoder) {
-        super(repositoryPort, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil, idEncoder);
         this.recordRuleRepositoryPort = repositoryPort;
         this.recordRuleMapper = mapper;
         this.resourceRepositoryPort = resourceRepositoryPort;
-        this.idEncoder = idEncoder;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class RecordRuleServiceImpl extends
     public RecordRuleDetailResponse update(Long id, RecordRuleUpdateRequest request) {
         RecordRule existing = recordRuleRepositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         validateUpdate(id, request);
         recordRuleMapper.updateDomain(request, existing);
         existing.setResource(resolveResource(request.getResourceId()));

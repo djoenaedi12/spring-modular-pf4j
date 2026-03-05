@@ -10,6 +10,7 @@ import gasi.gps.audit.domain.port.inbound.AuditLogService;
 import gasi.gps.audit.domain.port.outbound.AuditLogRepositoryPort;
 import gasi.gps.core.api.application.service.BaseServiceImpl;
 import gasi.gps.core.api.infrastructure.i18n.MessageUtil;
+import gasi.gps.core.api.infrastructure.util.IdEncoder;
 
 public class AuditLogServiceImpl extends
         BaseServiceImpl<AuditLog, AuditLogCreateRequest, AuditLogUpdateRequest, AuditLogSummaryResponse, AuditLogDetailResponse>
@@ -17,8 +18,8 @@ public class AuditLogServiceImpl extends
 
     public AuditLogServiceImpl(AuditLogRepositoryPort repositoryPort,
             AuditLogDtoMapper mapper,
-            MessageUtil messageUtil) {
-        super(repositoryPort, mapper, messageUtil);
+            MessageUtil messageUtil, IdEncoder idEncoder) {
+        super(repositoryPort, mapper, messageUtil, idEncoder);
     }
 
     @Override

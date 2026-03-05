@@ -26,18 +26,16 @@ public class ResourceServiceImpl extends
     private final ResourceRepositoryPort resourceRepositoryPort;
     private final ResourceDtoMapper resourceMapper;
     private final MenuRepositoryPort menuRepositoryPort;
-    private final IdEncoder idEncoder;
 
     public ResourceServiceImpl(ResourceRepositoryPort repositoryPort,
             ResourceDtoMapper mapper,
             MessageUtil messageUtil,
             MenuRepositoryPort menuRepositoryPort,
             IdEncoder idEncoder) {
-        super(repositoryPort, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil, idEncoder);
         this.resourceRepositoryPort = repositoryPort;
         this.resourceMapper = mapper;
         this.menuRepositoryPort = menuRepositoryPort;
-        this.idEncoder = idEncoder;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class ResourceServiceImpl extends
     public ResourceDetailResponse update(Long id, ResourceUpdateRequest request) {
         Resource existing = resourceRepositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         validateUpdate(id, request);
         resourceMapper.updateDomain(request, existing);
         existing.setMenu(resolveMenu(request.getMenuId()));

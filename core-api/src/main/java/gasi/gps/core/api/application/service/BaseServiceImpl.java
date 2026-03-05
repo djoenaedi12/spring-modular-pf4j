@@ -14,6 +14,7 @@ import gasi.gps.core.api.domain.model.SortOrder;
 import gasi.gps.core.api.domain.port.inbound.BaseService;
 import gasi.gps.core.api.domain.port.outbound.BaseRepositoryPort;
 import gasi.gps.core.api.infrastructure.i18n.MessageUtil;
+import gasi.gps.core.api.infrastructure.util.IdEncoder;
 
 /**
  * Generic base service with CRUD, filtering, sorting, and pagination.
@@ -34,13 +35,16 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     protected final BaseRepositoryPort<D> repositoryPort;
     protected final BaseDtoMapper<D, CRQ, URQ, SRS, DRS> mapper;
     protected final MessageUtil messageUtil;
+    protected final IdEncoder idEncoder;
 
     protected BaseServiceImpl(BaseRepositoryPort<D> repositoryPort,
             BaseDtoMapper<D, CRQ, URQ, SRS, DRS> mapper,
-            MessageUtil messageUtil) {
+            MessageUtil messageUtil,
+            IdEncoder idEncoder) {
         this.repositoryPort = repositoryPort;
         this.mapper = mapper;
         this.messageUtil = messageUtil;
+        this.idEncoder = idEncoder;
     }
 
     public DRS create(CRQ request) {
@@ -54,7 +58,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     public DRS findById(Long id) {
         D domain = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         return mapper.toDetail(domain);
     }
 
@@ -92,7 +96,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     public DRS update(Long id, URQ request) {
         D existing = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         validateUpdate(id, request);
         mapper.updateDomain(request, existing);
         D saved = repositoryPort.save(existing);
@@ -102,7 +106,7 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
     public void delete(Long id) {
         repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         validateDelete(id);
         repositoryPort.delete(id);
     }

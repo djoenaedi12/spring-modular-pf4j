@@ -12,6 +12,7 @@ import gasi.gps.auth.domain.port.inbound.AppClientService;
 import gasi.gps.auth.domain.port.outbound.AppClientRepositoryPort;
 import gasi.gps.core.api.application.service.BaseServiceImpl;
 import gasi.gps.core.api.infrastructure.i18n.MessageUtil;
+import gasi.gps.core.api.infrastructure.util.IdEncoder;
 
 @Service
 public class AppClientServiceImpl extends
@@ -20,8 +21,8 @@ public class AppClientServiceImpl extends
 
     public AppClientServiceImpl(AppClientRepositoryPort repositoryPort,
             AppClientDtoMapper mapper,
-            MessageUtil messageUtil) {
-        super(repositoryPort, mapper, messageUtil);
+            MessageUtil messageUtil, IdEncoder idEncoder) {
+        super(repositoryPort, mapper, messageUtil, idEncoder);
     }
 
     @Override

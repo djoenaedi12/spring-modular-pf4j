@@ -22,16 +22,14 @@ public class MenuServiceImpl extends
 
     private final MenuRepositoryPort menuRepositoryPort;
     private final MenuDtoMapper menuMapper;
-    private final IdEncoder idEncoder;
 
     public MenuServiceImpl(MenuRepositoryPort repositoryPort,
             MenuDtoMapper mapper,
             MessageUtil messageUtil,
             IdEncoder idEncoder) {
-        super(repositoryPort, mapper, messageUtil);
+        super(repositoryPort, mapper, messageUtil, idEncoder);
         this.menuRepositoryPort = repositoryPort;
         this.menuMapper = mapper;
-        this.idEncoder = idEncoder;
     }
 
     @Override
@@ -47,7 +45,7 @@ public class MenuServiceImpl extends
     public MenuDetailResponse update(Long id, MenuUpdateRequest request) {
         Menu existing = menuRepositoryPort.findById(id)
                 .orElseThrow(() -> new gasi.gps.core.api.application.exception.EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), id)));
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
         validateUpdate(id, request);
         menuMapper.updateDomain(request, existing);
         existing.setParent(resolveParent(request.getParentId()));
