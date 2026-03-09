@@ -1,0 +1,15 @@
+package gasi.gps.auth.infrastructure.persistence;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
+
+import gasi.gps.auth.infrastructure.entity.UserSessionEntity;
+
+/**
+ * Spring Data JPA repository for UserSessionEntity.
+ */
+@Repository
+public interface UserSessionEntityRepository extends JpaRepository<UserSessionEntity, Long>,
+        JpaSpecificationExecutor<UserSessionEntity> {
+}

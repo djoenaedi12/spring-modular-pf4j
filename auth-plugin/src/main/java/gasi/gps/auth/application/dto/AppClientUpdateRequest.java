@@ -38,6 +38,14 @@ public class AppClientUpdateRequest {
     @NotNull
     private Integer refreshTokenValidity;
 
+    private Integer webIdleTimeout;
+
+    @Builder.Default
+    private Boolean isSingleSession = true;
+
+    @Builder.Default
+    private Boolean isSingleDevice = false;
+
     @NotEmpty
     private String[] scopes;
 }

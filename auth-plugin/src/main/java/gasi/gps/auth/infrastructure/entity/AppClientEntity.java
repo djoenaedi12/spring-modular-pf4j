@@ -37,6 +37,15 @@ public class AppClientEntity extends BaseEntity {
     @Column(name = "refresh_token_validity", nullable = false)
     private Integer refreshTokenValidity;
 
+    @Column(name = "web_idle_timeout", nullable = true)
+    private Integer webIdleTimeout;
+
+    @Column(name = "is_single_session", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private Boolean isSingleSession;
+
+    @Column(name = "is_single_device", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isSingleDevice;
+
     @Column(name = "scopes", nullable = false, length = 255)
     private String scopes;
 }

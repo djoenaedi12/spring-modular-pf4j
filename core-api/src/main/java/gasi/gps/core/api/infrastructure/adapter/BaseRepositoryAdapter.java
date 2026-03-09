@@ -58,6 +58,16 @@ public abstract class BaseRepositoryAdapter<D extends BaseModel, E extends BaseE
         return mapper.toDomain(saved);
     }
 
+    @Override
+    public List<D> saveAll(List<D> models) {
+        List<E> entities = models.stream()
+                .map(mapper::toEntity)
+                .toList();
+        return jpaRepository.saveAll(entities).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
     // ── Find single ───────────────────────────────────────
 
     @Override
@@ -137,6 +147,36 @@ public abstract class BaseRepositoryAdapter<D extends BaseModel, E extends BaseE
     @Override
     public void delete(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        jpaRepository.deleteAllById(ids);
+    }
+
+    @Override
+    public void deleteAllBy(GenericFilter filter) {
+        deleteAllBy(filter, true);
+    }
+
+    @Override
+    public void deleteAllBy(GenericFilter filter, boolean useRecordRule) {
+        if (filter == null) {
+            throw new IllegalArgumentException("GenericFilter must not be null for bulk delete");
+        }
+
+        GenericFilter effectiveFilter = useRecordRule ? applyRecordRules(filter) : filter;
+        Specification<E> spec = toSpec(effectiveFilter);
+        List<E> entities = specExecutor.findAll(spec);
+
+        if (entities.isEmpty()) {
+            return;
+        }
+
+        jpaRepository.deleteAllInBatch(entities);
     }
 
     // ── Record Rules ─────────────────────────────────────

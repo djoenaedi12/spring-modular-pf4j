@@ -22,5 +22,8 @@ public class AppClientDetailResponse extends BaseDetailResponse {
     private String redirectUris;
     private Integer accessTokenValidity;
     private Integer refreshTokenValidity;
+    private Integer webIdleTimeout;
+    private Boolean isSingleSession;
+    private Boolean isSingleDevice;
     private String[] scopes;
 }

@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import gasi.gps.auth.application.dto.ForgotPasswordRequest;
 import gasi.gps.auth.application.dto.LoginRequest;
 import gasi.gps.auth.application.dto.LoginResponse;
+import gasi.gps.auth.application.dto.ResetPasswordRequest;
 import gasi.gps.auth.domain.port.inbound.AuthService;
 import gasi.gps.core.api.application.exception.BusinessException;
 import gasi.gps.core.api.infrastructure.security.SecurityContextUtil;
@@ -29,6 +31,9 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final String FORGOT_PASSWORD_MESSAGE = "If the account exists, a password reset link has been sent";
+    private static final String RESET_PASSWORD_MESSAGE = "Password has been reset successfully";
 
     private final AuthService authService;
     private final SecurityContextUtil securityContextUtil;
@@ -78,5 +83,23 @@ public class AuthController {
         // Fallback for non-client authentication flow
         LoginResponse response = authService.login(request);
         return ApiResponse.ok(response);
+    }
+
+    /**
+     * Initiates forgot-password flow.
+     */
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ApiResponse.ok(null, FORGOT_PASSWORD_MESSAGE);
+    }
+
+    /**
+     * Resets password using reset token.
+     */
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.ok(null, RESET_PASSWORD_MESSAGE);
     }
 }

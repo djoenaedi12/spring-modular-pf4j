@@ -17,6 +17,8 @@ import gasi.gps.core.api.domain.model.SortOrder;
 public interface BaseRepositoryPort<T extends BaseModel> {
     T save(T model);
 
+    List<T> saveAll(List<T> models);
+
     Optional<T> findById(Long id);
 
     Optional<T> findBy(GenericFilter filter);
@@ -27,6 +29,10 @@ public interface BaseRepositoryPort<T extends BaseModel> {
 
     void delete(Long id);
 
+    void deleteAllByIds(List<Long> ids);
+
+    void deleteAllBy(GenericFilter filter);
+
     Optional<T> findById(Long id, boolean useRecordRule);
 
     Optional<T> findBy(GenericFilter filter, boolean useRecordRule);
@@ -34,5 +40,7 @@ public interface BaseRepositoryPort<T extends BaseModel> {
     List<T> findAll(GenericFilter filter, List<SortOrder> orders, boolean useRecordRule);
 
     PageResult<T> findAll(int page, int size, GenericFilter filter, List<SortOrder> orders, boolean useRecordRule);
+
+    void deleteAllBy(GenericFilter filter, boolean useRecordRule);
 
 }

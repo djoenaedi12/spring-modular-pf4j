@@ -1,7 +1,9 @@
 package gasi.gps.auth.domain.port.inbound;
 
+import gasi.gps.auth.application.dto.ForgotPasswordRequest;
 import gasi.gps.auth.application.dto.LoginRequest;
 import gasi.gps.auth.application.dto.LoginResponse;
+import gasi.gps.auth.application.dto.ResetPasswordRequest;
 
 /**
  * Inbound port for authentication operations.
@@ -30,4 +32,18 @@ public interface AuthService {
      * @return login response containing tokens and scopes
      */
     LoginResponse login(String clientId, String clientSecret, LoginRequest request);
+
+    /**
+     * Initiates forgot password flow.
+     *
+     * @param request forgot password request
+     */
+    void forgotPassword(ForgotPasswordRequest request);
+
+    /**
+     * Resets password using a valid reset token.
+     *
+     * @param request reset password request
+     */
+    void resetPassword(ResetPasswordRequest request);
 }

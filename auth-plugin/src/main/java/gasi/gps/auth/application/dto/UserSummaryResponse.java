@@ -18,8 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class UserSummaryResponse extends BaseSummaryResponse {
 
     private String username;
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String email;
     private Boolean isEnabled;
 }

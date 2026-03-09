@@ -48,18 +48,18 @@ public abstract class BaseEntity {
     private Instant updatedAt;
 
     @CreatedBy
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "created_by", updatable = false, length = 50)
     private String createdBy;
 
     @LastModifiedBy
-    @Column(name = "updated_by")
+    @Column(name = "updated_by", length = 50)
     private String updatedBy;
 
-    @Column(name = "origin_id")
-    private Long originId;
+    @Column(name = "source_id")
+    private Long sourceId;
 
-    @Column(name = "status")
-    private String status;
+    @Column(name = "lifecycle_status", length = 20)
+    private String lifecycleStatus;
 
     @Version
     @Column(name = "version")

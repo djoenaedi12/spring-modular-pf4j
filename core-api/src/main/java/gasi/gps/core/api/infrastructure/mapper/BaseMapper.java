@@ -1,5 +1,7 @@
 package gasi.gps.core.api.infrastructure.mapper;
 
+import org.mapstruct.MappingTarget;
+
 import gasi.gps.core.api.domain.model.BaseModel;
 import gasi.gps.core.api.infrastructure.entity.BaseEntity;
 
@@ -11,7 +13,11 @@ import gasi.gps.core.api.infrastructure.entity.BaseEntity;
  * @param <E> JPA entity type
  */
 public interface BaseMapper<D extends BaseModel, E extends BaseEntity> {
+
     D toDomain(E entity);
 
     E toEntity(D domain);
+
+    @IgnoreAuditFields
+    void updateEntity(D source, @MappingTarget E target);
 }

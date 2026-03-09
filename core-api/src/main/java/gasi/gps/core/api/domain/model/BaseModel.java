@@ -21,7 +21,7 @@ public abstract class BaseModel {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
-    private Long originId;
-    private String status;
+    private Long sourceId;
+    private String lifecycleStatus;
     private Long version;
 }
