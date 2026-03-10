@@ -74,19 +74,15 @@ public class AuthController {
         request.setUserAgent(securityContextUtil.getCurrentUserAgent());
 
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic ")) {
-            try {
-                String base64Credentials = authHeader.substring("Basic ".length()).trim();
-                byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
-                String credentials = new String(credDecoded, StandardCharsets.UTF_8);
-                final String[] values = credentials.split(":", 2);
+            String base64Credentials = authHeader.substring("Basic ".length()).trim();
+            byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
+            String credentials = new String(credDecoded, StandardCharsets.UTF_8);
+            final String[] values = credentials.split(":", 2);
 
-                if (values.length == 2) {
-                    String clientId = values[0];
-                    String clientSecret = values[1];
-                    return ApiResponse.ok(authService.login(clientId, clientSecret, request));
-                }
-            } catch (Exception e) {
-                throw new BusinessException("Invalid Basic Authentication format");
+            if (values.length == 2) {
+                String clientId = values[0];
+                String clientSecret = values[1];
+                return ApiResponse.ok(authService.login(clientId, clientSecret, request));
             }
         }
 

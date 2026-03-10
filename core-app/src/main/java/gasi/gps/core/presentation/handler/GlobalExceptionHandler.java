@@ -4,8 +4,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -84,15 +89,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles authorization denied errors from Spring Security method authorization
-     * (403).
+     * Handles failed authentication (wrong username/password, locked, disabled)
+     * (401).
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<Void> handleAuthenticationFailed(AuthenticationException ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        return ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Invalid credentials");
+    }
+
+    /**
+     * Handles authorization denied errors from Spring Security (401 or 403).
+     *
+     * <p>
+     * Returns 401 if the current user is not authenticated (anonymous),
+     * 403 if authenticated but lacks the required permission.
+     * </p>
      */
     @ExceptionHandler(AuthorizationDeniedException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiResponse<Void> handleAuthorizationDenied(AuthorizationDeniedException ex) {
-        String message = ex.getMessage() != null ? ex.getMessage() : "Access denied";
-        log.warn("Authorization denied: {}", message);
-        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), message);
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(
+            AuthorizationDeniedException ex) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAnonymous = auth == null || auth instanceof AnonymousAuthenticationToken;
+
+        if (isAnonymous) {
+            log.warn("Unauthenticated access denied");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Unauthorized"));
+        }
+        log.warn("Authorization denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(HttpStatus.FORBIDDEN.value(), "Access denied"));
     }
 
     /**

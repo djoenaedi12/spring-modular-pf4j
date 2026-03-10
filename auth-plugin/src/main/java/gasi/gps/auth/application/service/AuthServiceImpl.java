@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
                 : request.getUsername();
 
         User user = userRepositoryPort.findByUsername(resolvedUsername)
-                .orElseThrow(() -> new BusinessException("Invalid credentials"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         Set<String> persistedRoles = user.getRoles() != null
                 ? user.getRoles().stream().map(Role::getCode).collect(Collectors.toSet())
@@ -175,20 +176,20 @@ public class AuthServiceImpl implements AuthService {
     @Auditable(action = "LOGIN", module = "Auth", description = "Client login: #{#clientId}, user: #{#request.username}")
     public LoginResponse login(String clientId, String clientSecret, LoginRequest request) {
         if (clientId == null || clientSecret == null) {
-            throw new BusinessException("Client credentials are required");
+            throw new BadCredentialsException("Invalid credentials");
         }
 
         AppClient appClient = appClientRepositoryPort
                 .findBy(new SimpleFilter("clientId", FilterOperator.EQUALS, clientId))
-                .orElseThrow(() -> new BusinessException("Invalid client credentials"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         if (!passwordEncoder.matches(clientSecret, appClient.getClientSecret())) {
-            throw new BusinessException("Invalid client credentials");
+            throw new BadCredentialsException("Invalid credentials");
         }
 
         if (appClient.getGrantTypes() == null
                 || Arrays.stream(appClient.getGrantTypes()).noneMatch(request.getGrantType()::equalsIgnoreCase)) {
-            throw new BusinessException("Unauthorized grant type: " + request.getGrantType());
+            throw new BadCredentialsException("Unauthorized grant type: " + request.getGrantType());
         }
 
         AuthenticatedPrincipal principal = authenticateByPolicy(request.getProvider(), request.getUsername(),
@@ -199,7 +200,7 @@ public class AuthServiceImpl implements AuthService {
                 : request.getUsername();
 
         User user = userRepositoryPort.findByUsername(resolvedUsername)
-                .orElseThrow(() -> new BusinessException("Invalid credentials"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         Set<String> persistedRoles = user.getRoles() != null
                 ? user.getRoles().stream().map(Role::getCode).collect(Collectors.toSet())
@@ -224,7 +225,6 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtUtil.generateRefreshTokenWithJti(refreshExpiry,
                 refreshTokenJti);
 
-        System.out.println(accessToken);
         Instant now = Instant.now();
 
         UserDevice userDevice = saveDevice(user, appClient, request, null);
