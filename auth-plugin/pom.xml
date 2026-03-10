@@ -51,6 +51,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Configuration Processor: generates metadata for @ConfigurationProperties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Caching -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

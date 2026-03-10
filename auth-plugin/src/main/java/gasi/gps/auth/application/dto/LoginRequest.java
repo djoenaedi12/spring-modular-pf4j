@@ -26,8 +26,10 @@ public class LoginRequest {
     @NotBlank
     private String password;
 
+    // Populated by Controller
     private String deviceId;
 
+    // Populated by Controller
     private String deviceModel;
 
     // Populated by Controller

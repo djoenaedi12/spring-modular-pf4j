@@ -24,10 +24,10 @@ import java.lang.annotation.Target;
 public @interface AuditableEntity {
 
     /**
-     * Business category for grouping logs.
+     * Business module for grouping logs.
      * Example: EMPLOYEE, PAYROLL, LEAVE, AUTH
      */
-    String category();
+    String module();
 
     /**
      * Human-readable entity name for the log.

@@ -23,5 +23,5 @@ public abstract class BaseModel {
     private String updatedBy;
     private Long sourceId;
     private String lifecycleStatus;
-    private Long version;
+    private Long version = 0L;
 }

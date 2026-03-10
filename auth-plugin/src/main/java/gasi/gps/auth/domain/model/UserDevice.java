@@ -23,7 +23,5 @@ public class UserDevice extends BaseModel {
     private AppClient appClient;
     private String deviceId;
     private String deviceModel;
-    private String osVersion;
-    private String appVersion;
     private Instant trustedExpiresAt;
 }

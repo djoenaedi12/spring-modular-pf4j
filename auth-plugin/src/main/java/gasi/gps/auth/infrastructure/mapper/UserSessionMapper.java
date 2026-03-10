@@ -1,7 +1,6 @@
 package gasi.gps.auth.infrastructure.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import gasi.gps.auth.domain.model.UserSession;
@@ -13,8 +12,5 @@ import gasi.gps.core.api.infrastructure.mapper.IgnoreAuditFields;
 public interface UserSessionMapper extends BaseMapper<UserSession, UserSessionEntity> {
 
     @IgnoreAuditFields
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "appClient", ignore = true)
-    @Mapping(target = "userDevice", ignore = true)
     void updateEntity(UserSession source, @MappingTarget UserSessionEntity target);
 }

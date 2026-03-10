@@ -41,12 +41,6 @@ public class UserDeviceEntity extends BaseEntity {
     @Column(name = "device_model", length = 150)
     private String deviceModel;
 
-    @Column(name = "os_version", length = 50)
-    private String osVersion;
-
-    @Column(name = "app_version", length = 50)
-    private String appVersion;
-
     @Column(name = "trusted_expires_at")
     private Instant trustedExpiresAt;
 }

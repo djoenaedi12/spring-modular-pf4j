@@ -15,6 +15,7 @@ import gasi.gps.auth.application.dto.LoginRequest;
 import gasi.gps.auth.application.dto.LoginResponse;
 import gasi.gps.auth.application.dto.ResetPasswordRequest;
 import gasi.gps.auth.domain.port.inbound.AuthService;
+import gasi.gps.auth.infrastructure.security.JwtUtil;
 import gasi.gps.core.api.application.exception.BusinessException;
 import gasi.gps.core.api.infrastructure.security.SecurityContextUtil;
 import gasi.gps.core.api.presentation.dto.ApiResponse;
@@ -25,25 +26,32 @@ import jakarta.validation.Valid;
  * REST controller for authentication endpoints.
  *
  * <p>
- * All endpoints are publicly accessible (whitelisted in SecurityConfig).
+ * Login, forgot-password, and reset-password are publicly accessible.
+ * Logout requires a valid JWT.
  * </p>
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String DEVICE_ID_HEADER = "X-Device-Id";
+    private static final String DEVICE_MODEL_HEADER = "X-Device-Model";
     private static final String FORGOT_PASSWORD_MESSAGE = "If the account exists, a password reset link has been sent";
     private static final String RESET_PASSWORD_MESSAGE = "Password has been reset successfully";
+    private static final String LOGOUT_MESSAGE = "Logged out successfully";
 
     private final AuthService authService;
     private final SecurityContextUtil securityContextUtil;
+    private final JwtUtil jwtUtil;
 
     /**
      * Constructs AuthController.
      */
-    public AuthController(AuthService authService, SecurityContextUtil securityContextUtil) {
+    public AuthController(AuthService authService, SecurityContextUtil securityContextUtil, JwtUtil jwtUtil) {
         this.authService = authService;
         this.securityContextUtil = securityContextUtil;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -60,6 +68,8 @@ public class AuthController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
             @Valid @RequestBody LoginRequest request) {
 
+        request.setDeviceId(httpServletRequest.getHeader(DEVICE_ID_HEADER));
+        request.setDeviceModel(httpServletRequest.getHeader(DEVICE_MODEL_HEADER));
         request.setIpAddress(securityContextUtil.getCurrentIp());
         request.setUserAgent(securityContextUtil.getCurrentUserAgent());
 
@@ -101,5 +111,22 @@ public class AuthController {
     public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ApiResponse.ok(null, RESET_PASSWORD_MESSAGE);
+    }
+
+    /**
+     * Logs out by revoking the current access token session.
+     * Requires a valid JWT in the Authorization header.
+     */
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletRequest request) {
+        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+            throw new BusinessException("Bearer token is required");
+        }
+
+        String token = header.substring(BEARER_PREFIX.length());
+        String jti = jwtUtil.getJtiFromToken(token);
+        authService.logout(jti);
+        return ApiResponse.ok(null, LOGOUT_MESSAGE);
     }
 }

@@ -32,11 +32,11 @@ public class UserSessionEntity extends BaseEntity {
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "app_client_id", nullable = false)
+    @JoinColumn(name = "app_client_id")
     private AppClientEntity appClient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_device_id", nullable = false)
+    @JoinColumn(name = "user_device_id")
     private UserDeviceEntity userDevice;
 
     @Column(name = "access_token_jti", nullable = false, length = 100)

@@ -19,8 +19,8 @@ public class SecurityContextUtilImpl implements SecurityContextUtil {
     @Override
     public String getCurrentUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getDetails() instanceof String) {
-            return (String) auth.getDetails();
+        if (auth != null && auth.getPrincipal() instanceof String) {
+            return (String) auth.getPrincipal();
         }
         return null;
     }

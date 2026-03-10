@@ -62,6 +62,6 @@ public abstract class BaseEntity {
     private String lifecycleStatus;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    @Column(name = "version", columnDefinition = "bigint default 0", nullable = false)
+    private Long version = 0L;
 }

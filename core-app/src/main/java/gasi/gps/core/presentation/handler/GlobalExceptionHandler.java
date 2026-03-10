@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -80,6 +81,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNPROCESSABLE_CONTENT.value(),
                 "Business rule violation",
                 ex.getErrors());
+    }
+
+    /**
+     * Handles authorization denied errors from Spring Security method authorization
+     * (403).
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Void> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Access denied";
+        log.warn("Authorization denied: {}", message);
+        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), message);
     }
 
     /**

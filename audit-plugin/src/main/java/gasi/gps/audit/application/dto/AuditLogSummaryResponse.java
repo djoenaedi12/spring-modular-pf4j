@@ -20,7 +20,6 @@ public class AuditLogSummaryResponse extends BaseSummaryResponse {
 
     private String actorId;
     private String action;
-    private String category;
     private String module;
     private String resourceType;
     private String resourceId;

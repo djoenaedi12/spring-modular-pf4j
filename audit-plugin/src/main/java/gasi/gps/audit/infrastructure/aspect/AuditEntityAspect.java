@@ -17,10 +17,12 @@ import org.springframework.stereotype.Component;
 import gasi.gps.audit.AuditContext;
 import gasi.gps.audit.domain.model.AuditLog;
 import gasi.gps.audit.domain.port.outbound.AuditLogRepositoryPort;
+import gasi.gps.core.api.application.dto.BaseSummaryResponse;
 import gasi.gps.core.api.audit.AuditLogExtension;
 import gasi.gps.core.api.audit.AuditableEntity;
 import gasi.gps.core.api.infrastructure.entity.BaseEntity;
 import gasi.gps.core.api.infrastructure.security.SecurityContextUtil;
+import gasi.gps.core.api.infrastructure.util.IdEncoder;
 
 /**
  * AOP Aspect that intercepts BaseService CUD methods and generates audit logs
@@ -43,13 +45,16 @@ public class AuditEntityAspect {
     private final AuditLogRepositoryPort repository;
     private final SecurityContextUtil securityContextUtil;
     private final PluginManager pluginManager;
+    private final IdEncoder idEncoder;
 
     public AuditEntityAspect(AuditLogRepositoryPort repository,
             SecurityContextUtil securityContextUtil,
-            PluginManager pluginManager) {
+            PluginManager pluginManager,
+            IdEncoder idEncoder) {
         this.repository = repository;
         this.securityContextUtil = securityContextUtil;
         this.pluginManager = pluginManager;
+        this.idEncoder = idEncoder;
     }
 
     // ─── CREATE ──────────────────────────────────────────────────────
@@ -63,7 +68,8 @@ public class AuditEntityAspect {
 
     @AfterReturning(pointcut = "execution(* gasi.gps..BaseService+.update(..)) && target(target)", returning = "result")
     public void auditUpdate(JoinPoint joinPoint, Object target, Object result) {
-        doLog(target, "UPDATE", result);
+        Object idArg = joinPoint.getArgs().length > 0 ? joinPoint.getArgs()[0] : null;
+        doLogWithId(target, "UPDATE", idArg != null ? idArg.toString() : null);
     }
 
     // ─── DELETE ──────────────────────────────────────────────────────
@@ -93,7 +99,7 @@ public class AuditEntityAspect {
                     .actorId(securityContextUtil.getCurrentUsername())
                     .actorIp(securityContextUtil.getCurrentIp())
                     .action(action)
-                    .category(annotation.category())
+                    .module(annotation.module())
                     .resourceType(annotation.resourceType())
                     .description("Failed: " + ex.getMessage())
                     .status("FAILED")
@@ -109,6 +115,9 @@ public class AuditEntityAspect {
     private String resolveEntityId(Object target) {
         if (target instanceof BaseEntity entity) {
             return entity.getId() != null ? entity.getId().toString() : null;
+        } else if (target instanceof BaseSummaryResponse srs) {
+            Long idLong = idEncoder.decode(srs.getId());
+            return idLong != null ? idLong.toString() : null;
         }
         return null;
     }
@@ -147,7 +156,7 @@ public class AuditEntityAspect {
                     .actorId(securityContextUtil.getCurrentUsername())
                     .actorIp(securityContextUtil.getCurrentIp())
                     .action(action)
-                    .category(annotation.category())
+                    .module(annotation.module())
                     .resourceType(annotation.resourceType())
                     .resourceId(entityId)
                     .description(description)

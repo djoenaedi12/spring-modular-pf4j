@@ -18,11 +18,9 @@ public class AuditLog extends BaseModel {
     private String actorId;
     private String actorIp;
     private String action;
-    private String category;
     private String module;
     private String resourceType;
     private String resourceId;
-    private String[] fieldsChanged;
     private String description;
     @lombok.Builder.Default
     private String status = "SUCCESS";

@@ -26,14 +26,16 @@ import gasi.gps.auth.domain.model.User;
 import gasi.gps.auth.domain.model.UserDevice;
 import gasi.gps.auth.domain.model.UserSession;
 import gasi.gps.auth.domain.port.inbound.AuthService;
+import gasi.gps.auth.domain.port.inbound.UserSessionService;
 import gasi.gps.auth.domain.port.outbound.AppClientRepositoryPort;
 import gasi.gps.auth.domain.port.outbound.PasswordHistoryRepositoryPort;
 import gasi.gps.auth.domain.port.outbound.PasswordResetRepositoryPort;
+import gasi.gps.auth.domain.port.outbound.UserDeviceRepositoryPort;
 import gasi.gps.auth.domain.port.outbound.UserRepositoryPort;
-import gasi.gps.auth.domain.port.outbound.UserSessionRepositoryPort;
 import gasi.gps.auth.infrastructure.security.JwtUtil;
 import gasi.gps.auth.infrastructure.security.provider.LocalAuthProvider;
 import gasi.gps.core.api.application.exception.BusinessException;
+import gasi.gps.core.api.audit.Auditable;
 import gasi.gps.core.api.domain.model.AndFilter;
 import gasi.gps.core.api.domain.model.GenericFilter;
 import gasi.gps.core.api.domain.model.SimpleFilter;
@@ -56,7 +58,8 @@ public class AuthServiceImpl implements AuthService {
     private final AppClientRepositoryPort appClientRepositoryPort;
     private final PasswordHistoryRepositoryPort passwordHistoryRepositoryPort;
     private final PasswordResetRepositoryPort passwordResetRepositoryPort;
-        private final UserSessionRepositoryPort userSessionRepositoryPort;
+    private final UserSessionService userSessionService;
+    private final UserDeviceRepositoryPort userDeviceRepositoryPort;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final Map<String, AuthProviderExtension> providers;
@@ -65,7 +68,8 @@ public class AuthServiceImpl implements AuthService {
             AppClientRepositoryPort appClientRepositoryPort,
             PasswordHistoryRepositoryPort passwordHistoryRepositoryPort,
             PasswordResetRepositoryPort passwordResetRepositoryPort,
-            UserSessionRepositoryPort userSessionRepositoryPort,
+            UserSessionService userSessionService,
+            UserDeviceRepositoryPort userDeviceRepositoryPort,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             List<AuthProviderExtension> providers) {
@@ -73,7 +77,8 @@ public class AuthServiceImpl implements AuthService {
         this.appClientRepositoryPort = appClientRepositoryPort;
         this.passwordHistoryRepositoryPort = passwordHistoryRepositoryPort;
         this.passwordResetRepositoryPort = passwordResetRepositoryPort;
-        this.userSessionRepositoryPort = userSessionRepositoryPort;
+        this.userSessionService = userSessionService;
+        this.userDeviceRepositoryPort = userDeviceRepositoryPort;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.providers = providers.stream()
@@ -84,6 +89,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Auditable(action = "LOGIN", module = "Auth", description = "User login: #{#request.username}")
     public LoginResponse login(LoginRequest request) {
         AuthenticatedPrincipal principal = authenticateByPolicy(request.getProvider(), request.getUsername(),
                 request.getPassword());
@@ -106,13 +112,19 @@ public class AuthServiceImpl implements AuthService {
         String accessTokenJti = java.util.UUID.randomUUID().toString();
         String refreshTokenJti = java.util.UUID.randomUUID().toString();
 
-        String accessToken = jwtUtil.generateAccessTokenWithJti(
-                user.getUsername(), roles, null, jwtUtil.getAccessTokenExpiration(),
-                accessTokenJti);
-        String refreshToken = jwtUtil.generateRefreshTokenWithJti(jwtUtil.getRefreshTokenExpiration(), refreshTokenJti);
+        long accessExpiry = jwtUtil.getAccessTokenExpiration();
+        long refreshExpiry = jwtUtil.getRefreshTokenExpiration();
 
-        // Update last login
-        user.setLastLoginAt(Instant.now());
+        String accessToken = jwtUtil.generateAccessTokenWithJti(
+                user.getUsername(), roles, null, accessExpiry, accessTokenJti);
+        String refreshToken = jwtUtil.generateRefreshTokenWithJti(refreshExpiry, refreshTokenJti);
+
+        Instant now = Instant.now();
+
+        UserDevice userDevice = saveDevice(user, null, request, null);
+        saveSession(user, null, request, userDevice, accessTokenJti, refreshTokenJti, refreshExpiry, now);
+
+        user.setLastLoginAt(now);
         user.setFailedLoginCount(0);
         userRepositoryPort.save(user);
 
@@ -120,17 +132,19 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(jwtUtil.getAccessTokenExpiration())
+                .expiresIn(accessExpiry)
                 .build();
     }
 
     @Override
+    @Auditable(action = "FORGOT_PASSWORD", module = "Auth", description = "Forgot password request: #{#request.username}")
     public void forgotPassword(ForgotPasswordRequest request) {
         userRepositoryPort.findByUsername(request.getUsername())
                 .ifPresent(this::generateAndSendResetToken);
     }
 
     @Override
+    @Auditable(action = "RESET_PASSWORD", module = "Auth", description = "Password reset executed")
     public void resetPassword(ResetPasswordRequest request) {
         Instant now = Instant.now();
         String tokenHash = HashUtil.sha256Base64(request.getToken());
@@ -138,11 +152,8 @@ public class AuthServiceImpl implements AuthService {
         PasswordReset passwordReset = passwordResetRepositoryPort.findActiveByTokenHash(tokenHash, now)
                 .orElseThrow(() -> new BusinessException("Invalid or expired reset token"));
 
-        Long userId = passwordReset.getUserId();
-        User user = userRepositoryPort.findById(userId, false)
-                .orElseThrow(() -> new BusinessException("Invalid or expired reset token"));
-
-        validatePasswordNotReused(userId, user.getPasswordHash(), request.getNewPassword());
+        User user = passwordReset.getUser();
+        validatePasswordNotReused(user, user.getPasswordHash(), request.getNewPassword());
 
         String newPasswordHash = passwordEncoder.encode(request.getNewPassword());
         user.setPasswordHash(newPasswordHash);
@@ -152,29 +163,31 @@ public class AuthServiceImpl implements AuthService {
         userRepositoryPort.save(user);
 
         passwordHistoryRepositoryPort.save(PasswordHistory.builder()
-                .userId(userId)
+                .user(user)
                 .passwordHash(newPasswordHash)
                 .build());
-        prunePasswordHistory(userId);
+        prunePasswordHistory(user);
 
-        invalidateActiveResetTokens(userId);
+        invalidateActiveResetTokens(user);
     }
 
     @Override
+    @Auditable(action = "LOGIN", module = "Auth", description = "Client login: #{#clientId}, user: #{#request.username}")
     public LoginResponse login(String clientId, String clientSecret, LoginRequest request) {
         if (clientId == null || clientSecret == null) {
             throw new BusinessException("Client credentials are required");
         }
 
-        AppClient client = appClientRepositoryPort.findBy(new SimpleFilter("clientId", FilterOperator.EQUALS, clientId))
+        AppClient appClient = appClientRepositoryPort
+                .findBy(new SimpleFilter("clientId", FilterOperator.EQUALS, clientId))
                 .orElseThrow(() -> new BusinessException("Invalid client credentials"));
 
-        if (!clientSecret.equals(client.getClientSecret())) {
+        if (!passwordEncoder.matches(clientSecret, appClient.getClientSecret())) {
             throw new BusinessException("Invalid client credentials");
         }
 
-        if (client.getGrantTypes() == null
-                || Arrays.stream(client.getGrantTypes()).noneMatch(request.getGrantType()::equalsIgnoreCase)) {
+        if (appClient.getGrantTypes() == null
+                || Arrays.stream(appClient.getGrantTypes()).noneMatch(request.getGrantType()::equalsIgnoreCase)) {
             throw new BusinessException("Unauthorized grant type: " + request.getGrantType());
         }
 
@@ -196,13 +209,11 @@ public class AuthServiceImpl implements AuthService {
                 ? principal.roles()
                 : persistedRoles;
 
-        Set<String> scopes = client.getScopes() != null ? Set.of(client.getScopes()) : Set.of();
+        Set<String> scopes = appClient.getScopes() != null ? Set.of(appClient.getScopes()) : Set.of();
 
-        long accessExpiry = client.getAccessTokenValidity() != null ? client.getAccessTokenValidity()
+        long accessExpiry = appClient.getAccessTokenValidity() != null ? appClient.getAccessTokenValidity()
                 : jwtUtil.getAccessTokenExpiration();
-
-        // Use 86400 (24h) or another default if refresh token expires not in jwtUtil
-        long refreshExpiry = client.getRefreshTokenValidity() != null ? client.getRefreshTokenValidity()
+        long refreshExpiry = appClient.getRefreshTokenValidity() != null ? appClient.getRefreshTokenValidity()
                 : jwtUtil.getRefreshTokenExpiration();
 
         String accessTokenJti = java.util.UUID.randomUUID().toString();
@@ -213,24 +224,11 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtUtil.generateRefreshTokenWithJti(refreshExpiry,
                 refreshTokenJti);
 
+        System.out.println(accessToken);
         Instant now = Instant.now();
-        Instant sessionExpiresAt = now.plusSeconds(refreshExpiry);
 
-        userSessionRepositoryPort.save(UserSession.builder()
-                .user(User.builder().id(user.getId()).build())
-                .appClient(AppClient.builder().id(client.getId()).build())
-                .userDevice(UserDevice.builder()
-                        .deviceId(request.getDeviceId())
-                        .deviceModel(request.getDeviceModel())
-                        .build())
-                .accessTokenJti(accessTokenJti)
-                .refreshTokenJti(refreshTokenJti)
-                .issuedAt(now)
-                .expiresAt(sessionExpiresAt)
-                .lastActivityAt(now)
-                .ipAddress(request.getIpAddress())
-                .userAgent(request.getUserAgent())
-                .build());
+        UserDevice userDevice = saveDevice(user, appClient, request, null);
+        saveSession(user, appClient, request, userDevice, accessTokenJti, refreshTokenJti, refreshExpiry, now);
 
         user.setLastLoginAt(now);
         user.setFailedLoginCount(0);
@@ -245,15 +243,60 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Override
+    @Auditable(action = "LOGOUT", module = "Auth", description = "User logout")
+    public void logout(String accessTokenJti) {
+        userSessionService.revokeAccessToken(accessTokenJti);
+    }
+
+    private void saveSession(User user, AppClient appClient, LoginRequest request, UserDevice userDevice,
+            String accessTokenJti,
+            String refreshTokenJti, long sessionExpirySeconds, Instant now) {
+        UserSession.UserSessionBuilder builder = UserSession.builder()
+                .user(user)
+                .accessTokenJti(accessTokenJti)
+                .refreshTokenJti(refreshTokenJti)
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(sessionExpirySeconds))
+                .lastActivityAt(now)
+                .ipAddress(request.getIpAddress())
+                .userAgent(request.getUserAgent());
+
+        if (appClient != null) {
+            builder.appClient(appClient);
+        }
+        if (userDevice != null) {
+            builder.userDevice(userDevice);
+        }
+
+        userSessionService.save(builder.build(), accessTokenJti);
+    }
+
+    private UserDevice saveDevice(User user, AppClient appClient, LoginRequest request, Instant trustedExpiresAt) {
+        String deviceId = request.getDeviceId();
+        String deviceModel = request.getDeviceModel();
+        if (deviceId == null || deviceId.isBlank()) {
+            deviceId = UUID.randomUUID().toString();
+        }
+
+        UserDevice.UserDeviceBuilder builder = UserDevice.builder()
+                .user(user)
+                .appClient(appClient)
+                .deviceId(deviceId)
+                .deviceModel(deviceModel)
+                .trustedExpiresAt(trustedExpiresAt);
+        return userDeviceRepositoryPort.save(builder.build());
+    }
+
     private void generateAndSendResetToken(User user) {
         Instant now = Instant.now();
-        invalidateActiveResetTokens(user.getId());
+        invalidateActiveResetTokens(user);
 
         String rawToken = generateResetToken();
         Instant expiresAt = now.plusSeconds(RESET_TOKEN_TTL_SECONDS);
 
         PasswordReset resetEntity = PasswordReset.builder()
-                .userId(user.getId())
+                .user(user)
                 .resetTokenHash(HashUtil.sha256Base64(rawToken))
                 .expiresAt(expiresAt)
                 .build();
@@ -267,13 +310,13 @@ public class AuthServiceImpl implements AuthService {
         passwordResetRepositoryPort.sendPasswordReset(recipient, rawToken, expiresAt);
     }
 
-    private void invalidateActiveResetTokens(Long userId) {
+    private void invalidateActiveResetTokens(User user) {
         GenericFilter activeUserFilter = AndFilter.builder()
                 .filters(List.of(
                         SimpleFilter.builder()
                                 .field("user.id")
                                 .operator(SimpleFilter.FilterOperator.EQUALS)
-                                .value(userId)
+                                .value(user.getId())
                                 .build(),
                         SimpleFilter.builder()
                                 .field("usedAt")
@@ -283,12 +326,12 @@ public class AuthServiceImpl implements AuthService {
         passwordResetRepositoryPort.deleteAllBy(activeUserFilter, false);
     }
 
-    private void validatePasswordNotReused(Long userId, String currentPasswordHash, String newPassword) {
+    private void validatePasswordNotReused(User user, String currentPasswordHash, String newPassword) {
         if (currentPasswordHash != null && passwordEncoder.matches(newPassword, currentPasswordHash)) {
             throw new BusinessException("New password has been used previously");
         }
 
-        List<PasswordHistory> histories = passwordHistoryRepositoryPort.findByUserIdOrderByCreatedAtDesc(userId);
+        List<PasswordHistory> histories = passwordHistoryRepositoryPort.findByUserIdOrderByCreatedAtDesc(user.getId());
         boolean alreadyUsed = histories.stream()
                 .map(PasswordHistory::getPasswordHash)
                 .filter(hash -> hash != null && !hash.isBlank())
@@ -299,9 +342,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private void prunePasswordHistory(Long userId) {
+    private void prunePasswordHistory(User user) {
         int keepRows = Math.max(PASSWORD_HISTORY_KEEP_ROWS, 0);
-        List<PasswordHistory> histories = passwordHistoryRepositoryPort.findByUserIdOrderByCreatedAtDesc(userId);
+        List<PasswordHistory> histories = passwordHistoryRepositoryPort.findByUserIdOrderByCreatedAtDesc(user.getId());
 
         if (histories.size() <= keepRows) {
             return;

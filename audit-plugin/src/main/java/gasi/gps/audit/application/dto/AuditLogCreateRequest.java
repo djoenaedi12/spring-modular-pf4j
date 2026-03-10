@@ -29,9 +29,6 @@ public class AuditLogCreateRequest {
     private String action;
 
     @Size(max = 50)
-    private String category;
-
-    @Size(max = 50)
     private String module;
 
     @Size(max = 150)
@@ -39,8 +36,6 @@ public class AuditLogCreateRequest {
 
     @Size(max = 50)
     private String resourceId;
-
-    private String[] fieldsChanged;
 
     private String description;
 

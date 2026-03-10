@@ -11,10 +11,12 @@ import gasi.gps.auth.domain.model.Action;
 import gasi.gps.auth.domain.port.inbound.ActionService;
 import gasi.gps.auth.domain.port.outbound.ActionRepositoryPort;
 import gasi.gps.core.api.application.service.BaseServiceImpl;
+import gasi.gps.core.api.audit.AuditableEntity;
 import gasi.gps.core.api.infrastructure.i18n.MessageUtil;
 import gasi.gps.core.api.infrastructure.util.IdEncoder;
 
 @Service
+@AuditableEntity(module = "auth", resourceType = "Action")
 public class ActionServiceImpl extends
         BaseServiceImpl<Action, ActionCreateRequest, ActionUpdateRequest, ActionSummaryResponse, ActionDetailResponse>
         implements ActionService {

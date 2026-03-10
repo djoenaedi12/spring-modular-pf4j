@@ -18,6 +18,16 @@
             <artifactId>core-api</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>gasi.gps</groupId>
+            <artifactId>auth-plugin</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>gasi.gps</groupId>
+            <artifactId>audit-plugin</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

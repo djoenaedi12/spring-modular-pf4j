@@ -24,7 +24,7 @@ public class AuditLogEntity extends BaseEntity {
     @Column(name = "trace_id")
     private String traceId;
 
-    @Column(name = "actor_id", nullable = false)
+    @Column(name = "actor_id", length = 50)
     private String actorId;
 
     @Column(name = "actor_ip", length = 20)
@@ -32,9 +32,6 @@ public class AuditLogEntity extends BaseEntity {
 
     @Column(name = "action", nullable = false, length = 20)
     private String action;
-
-    @Column(name = "category", length = 50)
-    private String category;
 
     @Column(name = "module", length = 50)
     private String module;
@@ -44,9 +41,6 @@ public class AuditLogEntity extends BaseEntity {
 
     @Column(name = "resource_id", length = 50)
     private String resourceId;
-
-    @Column(name = "fields_changed", columnDefinition = "text")
-    private String fieldsChanged;
 
     @Column(name = "description", columnDefinition = "text")
     private String description;

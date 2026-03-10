@@ -46,4 +46,11 @@ public interface AuthService {
      * @param request reset password request
      */
     void resetPassword(ResetPasswordRequest request);
+
+    /**
+     * Logs out by revoking the session associated with the given access token JTI.
+     *
+     * @param accessTokenJti the JWT ID of the access token to revoke
+     */
+    void logout(String accessTokenJti);
 }

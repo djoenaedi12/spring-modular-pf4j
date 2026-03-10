@@ -22,11 +22,9 @@ public class AuditLogDetailResponse extends BaseDetailResponse {
     private String actorId;
     private String actorIp;
     private String action;
-    private String category;
     private String module;
     private String resourceType;
     private String resourceId;
-    private String[] fieldsChanged;
     private String description;
     private String status;
 }

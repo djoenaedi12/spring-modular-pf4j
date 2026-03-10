@@ -19,4 +19,5 @@ public class LoginResponse {
     private String tokenType;
     private Long expiresIn;
     private String scope;
+    private String deviceId;
 }

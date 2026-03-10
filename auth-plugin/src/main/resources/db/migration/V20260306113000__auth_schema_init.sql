@@ -1,42 +1,40 @@
 CREATE TABLE IF NOT EXISTS actions (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
-    description VARCHAR(255),
-    CONSTRAINT uq_actions_code UNIQUE (code)
+    description VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS roles (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
-    description VARCHAR(255),
-    CONSTRAINT uq_roles_code UNIQUE (code)
+    description VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS menus (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
     title VARCHAR(150),
@@ -48,57 +46,54 @@ CREATE TABLE IF NOT EXISTS menus (
     platform VARCHAR(20) NOT NULL,
     module VARCHAR(50),
     is_visible BOOLEAN NOT NULL DEFAULT TRUE,
-    help_url VARCHAR(255),
-    CONSTRAINT uq_menus_code UNIQUE (code),
+    help_url VARCHAR(255)
     CONSTRAINT fk_menus_parent_id FOREIGN KEY (parent_id) REFERENCES menus (id)
 );
 
 CREATE TABLE IF NOT EXISTS resources (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
     description VARCHAR(255),
     is_approval_required BOOLEAN NOT NULL DEFAULT FALSE,
-    menu_id BIGINT NOT NULL,
-    CONSTRAINT uq_resources_code UNIQUE (code),
+    menu_id BIGINT NOT NULL
     CONSTRAINT fk_resources_menu_id FOREIGN KEY (menu_id) REFERENCES menus (id)
 );
 
 CREATE TABLE IF NOT EXISTS record_rules (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
     description VARCHAR(255),
     resource_id BIGINT NOT NULL,
     condition_expression TEXT NOT NULL,
     uri VARCHAR(255) NOT NULL,
-    CONSTRAINT uq_record_rules_code UNIQUE (code),
     CONSTRAINT fk_record_rules_resource_id FOREIGN KEY (resource_id) REFERENCES resources (id)
 );
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     username VARCHAR(50) NOT NULL,
     password_hash VARCHAR(255),
     full_name VARCHAR(150),
@@ -110,19 +105,18 @@ CREATE TABLE IF NOT EXISTS users (
     failed_login_count INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP NULL,
     authorized_until TIMESTAMP NULL,
-    password_changed_at TIMESTAMP NULL,
-    CONSTRAINT uq_users_username UNIQUE (username)
+    password_changed_at TIMESTAMP NULL
 );
 
 CREATE TABLE IF NOT EXISTS password_resets (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL,
     reset_token_hash VARCHAR(255),
     expires_at TIMESTAMP NOT NULL,
@@ -132,13 +126,13 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
 CREATE TABLE IF NOT EXISTS password_histories (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL,
     password_hash VARCHAR(255),
     CONSTRAINT fk_password_histories_user_id FOREIGN KEY (user_id) REFERENCES users (id)
@@ -146,13 +140,13 @@ CREATE TABLE IF NOT EXISTS password_histories (
 
 CREATE TABLE IF NOT EXISTS app_clients (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     client_id VARCHAR(50) NOT NULL,
     client_secret VARCHAR(255) NOT NULL,
     grant_types VARCHAR(255) NOT NULL,
@@ -162,53 +156,46 @@ CREATE TABLE IF NOT EXISTS app_clients (
     web_idle_timeout INTEGER,
     is_single_session BOOLEAN NOT NULL DEFAULT TRUE,
     is_single_device BOOLEAN NOT NULL DEFAULT FALSE,
-    scopes VARCHAR(255) NOT NULL,
-    CONSTRAINT uq_app_clients_client_id UNIQUE (client_id)
+    scopes VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_devices (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL,
-    app_client_id BIGINT NOT NULL,
+    app_client_id BIGINT,
     device_id VARCHAR(100) NOT NULL,
     device_model VARCHAR(150),
-    os_version VARCHAR(50),
-    app_version VARCHAR(50),
-    trusted_expires_at TIMESTAMP NULL,
-    CONSTRAINT uq_user_devices_device_id UNIQUE (device_id),
+    trusted_expires_at TIMESTAMP NULL
     CONSTRAINT fk_user_devices_user_id FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_user_devices_app_client_id FOREIGN KEY (app_client_id) REFERENCES app_clients (id)
 );
 
 CREATE TABLE IF NOT EXISTS user_sessions (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL,
-    app_client_id BIGINT NOT NULL,
-    user_device_id BIGINT NOT NULL,
+    app_client_id BIGINT,
+    user_device_id BIGINT,
     access_token_jti VARCHAR(100) NOT NULL,
     refresh_token_jti VARCHAR(100) NOT NULL,
     issued_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     last_activity_at TIMESTAMP NULL,
     ip_address VARCHAR(50),
-    user_agent VARCHAR(512),
-    CONSTRAINT uq_user_sessions_user_client UNIQUE (user_id, app_client_id),
-    CONSTRAINT uq_user_sessions_access_jti UNIQUE (access_token_jti),
-    CONSTRAINT uq_user_sessions_refresh_jti UNIQUE (refresh_token_jti),
+    user_agent VARCHAR(512)
     CONSTRAINT fk_user_sessions_user_id FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_user_sessions_app_client_id FOREIGN KEY (app_client_id) REFERENCES app_clients (id),
     CONSTRAINT fk_user_sessions_user_device_id FOREIGN KEY (user_device_id) REFERENCES user_devices (id)
@@ -216,18 +203,17 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 
 CREATE TABLE IF NOT EXISTS user_api_tokens (
     id BIGINT PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
     created_by VARCHAR(50),
     updated_by VARCHAR(50),
     source_id BIGINT,
     lifecycle_status VARCHAR(20),
-    version BIGINT,
+    version BIGINT NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL,
     name VARCHAR(150) NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP NULL,
-    CONSTRAINT uq_user_api_tokens_token_hash UNIQUE (token_hash),
+    expires_at TIMESTAMP NULL
     CONSTRAINT fk_user_api_tokens_user_id FOREIGN KEY (user_id) REFERENCES users (id)
 );
 

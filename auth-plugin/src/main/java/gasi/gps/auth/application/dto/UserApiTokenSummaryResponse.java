@@ -1,8 +1,8 @@
-package gasi.gps.auth.domain.model;
+package gasi.gps.auth.application.dto;
 
 import java.time.Instant;
 
-import gasi.gps.core.api.domain.model.BaseModel;
+import gasi.gps.core.api.application.dto.BaseSummaryResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,17 +10,16 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Domain model representing a password reset token lifecycle.
+ * Summary response DTO for user API token listing.
  */
 @Data
-@SuperBuilder(toBuilder = true)
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class PasswordReset extends BaseModel {
+public class UserApiTokenSummaryResponse extends BaseSummaryResponse {
 
-    private User user;
-    private String resetTokenHash;
+    private String userId;
+    private String name;
     private Instant expiresAt;
-    private Instant usedAt;
 }

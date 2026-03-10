@@ -29,9 +29,9 @@ public @interface Auditable {
     String action();
 
     /**
-     * Business category.
+     * Business module.
      */
-    String category() default "";
+    String module() default "";
 
     /**
      * Description with optional SpEL expressions.
