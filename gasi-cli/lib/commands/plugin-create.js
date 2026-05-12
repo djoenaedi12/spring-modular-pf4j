@@ -38,8 +38,8 @@ async function pluginCreate(opts) {
     if (!opts.yes) {
         console.log('\n' + chalk.bold('Summary:'));
         console.log(`  Plugin name     : ${chalk.green(answers.name + '-plugin')}`);
+        console.log(`  Plugin prefix   : ${chalk.green(answers.prefix)}`);
         console.log(`  Domain          : ${chalk.green(answers.domain)}`);
-        console.log(`  Identifier prefix : ${chalk.green(answers.identifierPrefix)}`);
         console.log(`  Base package    : ${chalk.green(answers.basePackage)}`);
         console.log(`  Full package    : ${chalk.green(answers.basePackage + '.' + answers.domain)}`);
         console.log(`  Version         : ${chalk.green(answers.version)}`);
@@ -112,7 +112,7 @@ async function collectAnswers(opts, parentPomPath) {
         raw = {
             name: name.toLowerCase(),
             domain: (opts.domain || name).toLowerCase(),
-            identifierPrefix: (opts.identifierPrefix || name).toLowerCase(),
+            pluginPrefix: (opts.pluginPrefix || name).toLowerCase(),
             basePackage: opts.package || 'gasi.gps',
             version: opts.pluginVersion || '1.0.0',
             description: opts.description || `${_.upperFirst(name)} plugin`,
@@ -141,14 +141,12 @@ async function collectAnswers(opts, parentPomPath) {
                 filter: (v) => v.trim().toLowerCase(),
             });
         }
-        if (!opts.identifierPrefix) {
+        if (!opts.pluginPrefix) {
             questions.push({
                 type: 'input',
-                name: 'identifierPrefix',
-                message: 'Identifier prefix (example: pay):',
-                default: (a) => a.name || opts.name,
-                validate: validateDomain,
-                filter: (v) => v.trim().toLowerCase(),
+                name: 'pluginPrefix',
+                message: 'Plugin prefix, example auth (optional):',
+                filter: (v) => (v || '').trim().toLowerCase(),
             });
         }
         if (!opts.package) {
@@ -182,7 +180,7 @@ async function collectAnswers(opts, parentPomPath) {
         const interim = {
             name: opts.name || answers.name,
             domain: opts.domain || answers.domain,
-            identifierPrefix: opts.identifierPrefix || answers.identifierPrefix,
+            pluginPrefix: opts.pluginPrefix || answers.pluginPrefix,
             basePackage: opts.package || answers.basePackage,
             version: opts.pluginVersion || answers.version,
             description: opts.description || answers.description,
@@ -350,7 +348,7 @@ function buildContext(a) {
 
     return {
         PLUGIN_NAME: a.name,
-        PLUGIN_PREFIX: a.identifierPrefix,
+        PLUGIN_PREFIX: a.pluginPrefix,
         PLUGIN_ID: `${a.name}-plugin`,
         PLUGIN_VERSION: a.version,
         PLUGIN_DESCRIPTION: a.description,
