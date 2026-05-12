@@ -1,18 +1,24 @@
 package gasi.gps.core.api.audit;
 
 /**
- * Port interface for plugins that need to write audit logs manually
- * (outside of the automatic AOP mechanism).
+ * Port for writing audit logs outside of automatic auditing.
+ *
+ * <p>Use this SPI for explicit business events that are not naturally covered
+ * by CRUD interception, such as login, export, approval, or integration
+ * callbacks.</p>
+ *
+ * @since 1.0.0
  */
 public interface AuditLogSpi {
 
     /**
      * Write a manual audit log entry.
      *
-     * @param action      the action (CREATE, UPDATE, DELETE, EXPORT, etc.)
-     * @param category    business category
+     * @param action      the action, for example {@code CREATE}, {@code EXPORT},
+     *                    or {@code LOGIN}
+     * @param category    business category for grouping logs
      * @param entityType  entity type name
-     * @param entityId    entity identifier
+     * @param entityId    entity identifier, or {@code null} for non-entity events
      * @param description human-readable description
      */
     void log(String action, String category, String entityType, String entityId, String description);
@@ -20,11 +26,12 @@ public interface AuditLogSpi {
     /**
      * Write a manual audit log entry with module info.
      *
-     * @param action      the action (CREATE, UPDATE, DELETE, EXPORT, etc.)
-     * @param category    business category
-     * @param module      module name
+     * @param action      the action, for example {@code CREATE}, {@code EXPORT},
+     *                    or {@code LOGIN}
+     * @param category    business category for grouping logs
+     * @param module      module code that owns the event
      * @param entityType  entity type name
-     * @param entityId    entity identifier
+     * @param entityId    entity identifier, or {@code null} for non-entity events
      * @param description human-readable description
      */
     void log(String action, String category, String module, String entityType, String entityId, String description);

@@ -6,15 +6,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method-level annotation for auditing non-CRUD operations
- * like APPROVE, REJECT, EXPORT, LOGIN, etc.
+ * Marks a method-level business operation for audit logging.
+ *
+ * <p>This annotation is intended for operations that are not covered by generic
+ * CRUD auditing, such as approve, reject, export, login, or sync.</p>
  *
  * <p>
  * Example usage:
  * </p>
  *
  * <pre>
- * {@code @Auditable(action = "APPROVE", category = "LEAVE",
+ * {@code @Auditable(action = "APPROVE", module = "LEAVE",
  *           description = "Approve leave request #{#id}")}
  * public LeaveRequest approveLeave(Long id) { }
  * </pre>
@@ -24,23 +26,36 @@ import java.lang.annotation.Target;
 public @interface Auditable {
 
     /**
-     * Action type: APPROVE, REJECT, EXPORT, LOGIN, LOGOUT, etc.
+     * Returns the business action to write into the audit log.
+     *
+     * @return action code, for example {@code APPROVE}, {@code EXPORT}, or
+     *         {@code LOGIN}
      */
     String action();
 
     /**
-     * Business module.
+     * Returns the module that owns the audited operation.
+     *
+     * @return module code, or an empty string when the auditing infrastructure
+     *         should infer it
      */
     String module() default "";
 
     /**
-     * Description with optional SpEL expressions.
-     * Supports: #{#paramName}, #{#result.field}
+     * Returns the human-readable audit description template.
+     *
+     * <p>Implementations may support expression placeholders such as
+     * {@code #{#paramName}} or {@code #{#result.field}}.</p>
+     *
+     * @return description template, or an empty string when no description is
+     *         provided
      */
     String description() default "";
 
     /**
-     * If true, always log even when nested inside another audited call.
+     * Controls whether this operation is logged inside another audited call.
+     *
+     * @return {@code true} to always log nested calls
      */
     boolean alwaysLog() default false;
 }

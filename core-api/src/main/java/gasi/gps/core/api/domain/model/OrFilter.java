@@ -9,8 +9,12 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
- * Combines multiple filters with OR logic.
- * At least one child filter must match for a record to be included.
+ * Filter expression that combines child filters with logical OR.
+ *
+ * <p>At least one child filter must match for a record to be included in the
+ * result.</p>
+ *
+ * @since 1.0.0
  */
 @Data
 @Builder

@@ -1,0 +1,28 @@
+package {{FULL_PACKAGE}}.application.service;
+
+import org.springframework.stereotype.Service;
+
+import gasi.gps.core.starter.application.service.BaseServiceImpl;
+import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}CreateRequest;
+import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}DetailResponse;
+import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}SummaryResponse;
+import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}UpdateRequest;
+import {{FULL_PACKAGE}}.application.mapper.{{ENTITY_NAME}}DtoMapper;
+import {{FULL_PACKAGE}}.domain.model.{{ENTITY_NAME}};
+import {{FULL_PACKAGE}}.domain.port.inbound.{{ENTITY_NAME}}Service;
+import {{FULL_PACKAGE}}.domain.port.outbound.{{ENTITY_NAME}}RepositoryPort;
+
+@Service
+public class {{ENTITY_NAME}}ServiceImpl
+        extends BaseServiceImpl<{{ENTITY_NAME}}, {{ENTITY_NAME}}CreateRequest, {{ENTITY_NAME}}UpdateRequest, {{ENTITY_NAME}}SummaryResponse, {{ENTITY_NAME}}DetailResponse>
+        implements {{ENTITY_NAME}}Service {
+
+    public {{ENTITY_NAME}}ServiceImpl({{ENTITY_NAME}}RepositoryPort repositoryPort, {{ENTITY_NAME}}DtoMapper dtoMapper) {
+        super(repositoryPort, dtoMapper);
+    }
+
+    @Override
+    protected String resourceType() {
+        return "{{ENTITY_NAME}}";
+    }
+}

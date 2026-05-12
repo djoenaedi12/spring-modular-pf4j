@@ -8,8 +8,14 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Base class for all domain models.
- * Contains ID, audit fields, and optimistic locking version.
+ * Base class for domain models shared across modules.
+ *
+ * <p>This class carries persistence-neutral metadata that mirrors the common
+ * entity fields used by the starter module: database ID, audit timestamps,
+ * actor metadata, approval source reference, lifecycle status, and optimistic
+ * locking version.</p>
+ *
+ * @since 1.0.0
  */
 @Data
 @SuperBuilder(toBuilder = true)

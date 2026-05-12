@@ -6,8 +6,16 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Abstract base for all filter types.
- * Subclasses: {@link SimpleFilter}, {@link AndFilter}, {@link OrFilter}.
+ * Base type for search filter expressions.
+ *
+ * <p>The JSON representation is polymorphic and selected by the {@code type}
+ * property. Supported values are {@code simple}, {@code and}, and
+ * {@code or}.</p>
+ *
+ * @see SimpleFilter
+ * @see AndFilter
+ * @see OrFilter
+ * @since 1.0.0
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({

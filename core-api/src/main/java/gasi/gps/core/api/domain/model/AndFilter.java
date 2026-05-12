@@ -9,8 +9,11 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
- * Combines multiple filters with AND logic.
- * All child filters must match for a record to be included.
+ * Filter expression that combines child filters with logical AND.
+ *
+ * <p>All child filters must match for a record to be included in the result.</p>
+ *
+ * @since 1.0.0
  */
 @Data
 @Builder

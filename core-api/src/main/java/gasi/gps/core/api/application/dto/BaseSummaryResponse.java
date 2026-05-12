@@ -8,10 +8,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Base summary response DTO for list/pagination views.
- * Contains only essential identification and timestamp fields.
+ * Base response DTO for list and pagination views.
  *
- * @param <ID> the type of the entity identifier
+ * <p>Summary responses intentionally expose only the public encoded identifier
+ * and creation timestamp shared by all resources.</p>
+ *
+ * @since 1.0.0
  */
 @Data
 @SuperBuilder(toBuilder = true)

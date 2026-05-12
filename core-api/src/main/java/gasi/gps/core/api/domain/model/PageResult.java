@@ -8,9 +8,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Domain-level page result, independent of any framework (e.g. Spring Page).
+ * Framework-neutral page result.
+ *
+ * <p>This type keeps pagination contracts out of Spring Data so services and
+ * plugin contracts can stay independent from a specific persistence framework.</p>
  *
  * @param <T> the content type
+ * @since 1.0.0
  */
 @Data
 @Builder
@@ -23,10 +27,20 @@ public class PageResult<T> {
     private long totalElements;
     private int totalPages;
 
+    /**
+     * Indicates whether there is another page after the current page.
+     *
+     * @return {@code true} when a next page exists
+     */
     public boolean hasNext() {
         return page < totalPages - 1;
     }
 
+    /**
+     * Indicates whether there is a page before the current page.
+     *
+     * @return {@code true} when a previous page exists
+     */
     public boolean hasPrevious() {
         return page > 0;
     }

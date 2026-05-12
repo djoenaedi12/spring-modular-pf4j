@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Base detail response DTO for single-entity views.
- * Contains all audit fields matching
- * {@link gasi.gps.core.api.domain.model.BaseModel}.
+ * Base response DTO for single-resource detail views.
  *
- * @param <ID> the type of the entity identifier
+ * <p>Extends {@link BaseSummaryResponse} with audit metadata and optimistic
+ * locking version. The public {@code id} remains encoded in the superclass.</p>
+ *
+ * @since 1.0.0
  */
 @Data
 @SuperBuilder(toBuilder = true)

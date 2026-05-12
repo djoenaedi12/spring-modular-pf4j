@@ -46,7 +46,7 @@ package gasi.gps.core.api.domain.model;
  * @param name        unique name of the plugin module
  * @param description human-readable description of the plugin
  * @param version     version of the plugin module
- * @see gasi.gps.core.api.AppExtension
+ * @see gasi.gps.core.api.extension.AppExtension
  * @since 1.0.0
  */
 public record ModuleInfo(String name, String description, String version) {

@@ -11,8 +11,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request body for search endpoints, combining a polymorphic filter with sort
- * orders.
+ * Request body for search endpoints.
+ *
+ * <p>The request combines an optional polymorphic filter, optional sort orders,
+ * and optional page settings. Field names are public API field names and may be
+ * restricted by the persistence adapter.</p>
  *
  * <p>
  * Example JSON:
@@ -24,7 +27,7 @@ import lombok.NoArgsConstructor;
  * "type": "simple",
  * "field": "name",
  * "operator": "LIKE",
- * "value": "%admin%"
+ * "value": "admin"
  * },
  * "sorts": [
  * { "field": "createdAt", "direction": "DESC" }

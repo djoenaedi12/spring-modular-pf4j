@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 /**
  * Standard API response envelope for all REST endpoints.
  *
- * <h3>Success example:</h3>
+ * <h2>Success example:</h2>
  *
  * <pre>{@code
  * {
@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
  * }
  * }</pre>
  *
- * <h3>Error example:</h3>
+ * <h2>Error example:</h2>
  *
  * <pre>{@code
  * {
@@ -52,7 +52,7 @@ public class ApiResponse<T> {
     private Instant timestamp = Instant.now();
 
     /**
-     * Creates a success response with data and HTTP 200.
+     * Creates a success response with data.
      *
      * @param data the response payload
      * @param <T>  the payload type
@@ -67,7 +67,7 @@ public class ApiResponse<T> {
     }
 
     /**
-     * Creates a success response with data, a custom message, and HTTP 200.
+     * Creates a success response with data and a custom message.
      *
      * @param data    the response payload
      * @param message a custom success message
@@ -83,7 +83,7 @@ public class ApiResponse<T> {
     }
 
     /**
-     * Creates a success response with no content (HTTP 204).
+     * Creates a success response with no payload.
      *
      * @return a no-content {@code ApiResponse}
      */
@@ -97,7 +97,8 @@ public class ApiResponse<T> {
     /**
      * Creates an error response with a single error message.
      *
-     * @param code    the HTTP status code
+     * @param code    status or application error code reserved for callers that
+     *                map envelopes to transport responses
      * @param message the error summary
      * @param <T>     the payload type
      * @return an error {@code ApiResponse}
@@ -113,7 +114,8 @@ public class ApiResponse<T> {
     /**
      * Creates an error response with multiple error messages.
      *
-     * @param code    the HTTP status code
+     * @param code    status or application error code reserved for callers that
+     *                map envelopes to transport responses
      * @param message the error summary
      * @param errors  the list of detailed error messages
      * @param <T>     the payload type

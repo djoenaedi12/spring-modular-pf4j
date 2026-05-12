@@ -1,0 +1,48 @@
+package gasi.gps.platform.infrastructure.config;
+
+import java.util.Optional;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+import gasi.gps.core.api.security.SecurityContextProvider;
+
+/**
+ * Enables JPA auditing and provides the current auditor (username) for auditing
+ * purposes.
+ * <p>
+ * The auditor is obtained from the {@link SecurityContextProvider}, which
+ * should be
+ * implemented
+ * by the authentication mechanism in use (e.g. JWT, OAuth2, etc.). If no
+ * authenticated user
+ * is found, it defaults to "system". This allows JPA auditing annotations like
+ * {@code @CreatedBy}
+ * and {@code @LastModifiedBy} to automatically populate with the current user's
+ * identity.
+ * <p>
+ * Note: This configuration assumes that the security context is properly set up
+ * and that the {@link SecurityContextProvider} bean is available in the Spring
+ * context. If not, the auditor will always default to "system". Make sure to
+ * implement and register a suitable {@link SecurityContextProvider} for your
+ * authentication mechanism to get accurate auditing information.
+ * for {@code @CreatedBy} and {@code @LastModifiedBy} fields.
+ */
+@Configuration
+@EnableJpaAuditing
+public class JpaAuditingConfig {
+
+    private final SecurityContextProvider securityContextUtil;
+
+    public JpaAuditingConfig(SecurityContextProvider securityContextUtil) {
+        this.securityContextUtil = securityContextUtil;
+    }
+
+    @Bean
+    public AuditorAware<String> auditorAware() {
+        return () -> Optional.ofNullable(securityContextUtil.getCurrentUsername())
+                .or(() -> Optional.of("system"));
+    }
+}
