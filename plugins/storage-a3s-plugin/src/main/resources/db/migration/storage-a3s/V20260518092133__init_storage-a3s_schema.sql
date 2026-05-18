@@ -1,0 +1,3 @@
+-- Storage A3S plugin does not require database tables.
+-- All provider configuration is managed by the media-plugin's
+-- storage_providers and storage_provider_mappings tables.

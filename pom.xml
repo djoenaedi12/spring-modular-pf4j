@@ -21,6 +21,8 @@
         <module>platform-app</module>
         <module>plugins/auth-plugin</module>
         <module>plugins/ldap-plugin</module>
+        <module>plugins/storage-plugin</module>
+        <module>plugins/storage-a3s-plugin</module>
     </modules>
 
     <properties>
