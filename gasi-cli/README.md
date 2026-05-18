@@ -4,6 +4,7 @@ Developer toolkit untuk modular Spring Boot + PF4J project. CLI ini menyediakan 
 
 - scaffold, build, deploy, clean, list, dan delete plugin
 - generate dan delete resource CRUD di dalam plugin
+- generate upload processor untuk shared data upload workflow
 - generate resource secara interactive atau dari file JSON
 - mengatur field yang masuk ke DTO create/update/summary/detail
 - menambahkan basic validation annotation dari resource spec
@@ -259,6 +260,45 @@ Useful flags:
 | `--dry-run`            | Prints delete actions without changing files        |
 | `-y, --yes`            | Skips the confirmation prompt                       |
 | `--cwd <path>`         | Root project, default: current directory            |
+
+## Uploader Commands
+
+Uploader command dipakai untuk generate processor resource-specific untuk shared
+upload API. Controller dan service upload tetap memakai base upload dari core.
+
+### Uploader create
+
+```bash
+gasi uploader create Employee
+```
+
+Jika dijalankan dari dalam folder plugin, target plugin otomatis dideteksi. Jika
+dijalankan dari root project, CLI akan meminta target plugin.
+
+Non-interactive:
+
+```bash
+gasi uploader create Employee --plugin employee --yes
+```
+
+Custom resource path:
+
+```bash
+gasi uploader create Employee --resource employee-master --plugin employee --yes
+```
+
+Hasil utama:
+
+```text
+plugins/{plugin}-plugin/src/main/java/{package}/application/service/EmployeeUplProcessor.java
+```
+
+Processor yang digenerate:
+
+- register resource melalui `resource()`
+- membaca file lewat `FileReaderRegistry`
+- mengisi `DataRowUpl` dari `FileRow`
+- menyediakan `validateRows` dan `commitRows` untuk diisi sesuai kebutuhan resource
 
 ## Resource Commands
 
