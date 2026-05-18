@@ -64,10 +64,3 @@ plugins/*.jar
 .env
 .env.local
 .env.*.local
-
-# ==== CLI ====
-node_modules/
-dist/
-build/
-coverage/
-.nyc_output/
