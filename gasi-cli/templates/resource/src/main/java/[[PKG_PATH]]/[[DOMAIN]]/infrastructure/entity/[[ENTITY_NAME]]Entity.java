@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity(name = "{{ENTITY_NAME}}")
-@Table(name = "{{PLUGIN_PREFIX}}_{{TABLE_NAME}}")
+@Table(name = "{{TABLE_NAME}}")
 public class {{ENTITY_NAME}}Entity extends BaseEntity {
 
 {{ENTITY_FIELDS}}

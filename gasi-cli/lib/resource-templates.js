@@ -9,9 +9,11 @@
  */
 const _ = require('lodash');
 const pluralize = require('pluralize');
+
 const TYPE_MAP = {
     String: { javaType: 'String', javaImports: [], sqlType: (f) => `VARCHAR(${f.length || 255})` },
     Text: { javaType: 'String', javaImports: [], sqlType: () => 'TEXT' },
+    MediumText: { javaType: 'String', javaImports: [], sqlType: () => 'MEDIUMTEXT' },
     Integer: { javaType: 'Integer', javaImports: [], sqlType: () => 'INT' },
     Long: { javaType: 'Long', javaImports: [], sqlType: () => 'BIGINT' },
     BigDecimal: { javaType: 'BigDecimal', javaImports: ['java.math.BigDecimal'], sqlType: () => 'DECIMAL(19,4)' },
@@ -23,6 +25,11 @@ const TYPE_MAP = {
     Enum: { javaType: null, javaImports: [], sqlType: () => 'VARCHAR(50)' },
     ManyToOne: { javaType: null, javaImports: [], sqlType: () => 'BIGINT' },
 };
+
+const STRING_TYPES = new Set(['String', 'Text', 'MediumText']);
+const INTEGER_TYPES = new Set(['Integer', 'Long']);
+const DECIMAL_TYPES = new Set(['BigDecimal', 'Double']);
+const DATE_TYPES = new Set(['Date', 'DateTime', 'Instant']);
 
 // ─── Helpers ───────────────────────────────────────────────────────────
 
@@ -54,6 +61,25 @@ function formatImports(importList) {
     return importList.map((i) => `import ${i};`).join('\n') + '\n';
 }
 
+function isIncluded(field, dtoName) {
+    return !field.dto || field.dto[dtoName] !== false;
+}
+
+function fieldsForDto(fields, dtoName) {
+    return fields.filter((f) => isIncluded(f, dtoName));
+}
+
+function escapeJavaString(value) {
+    return String(value)
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
+}
+
+function buildTableName(pluginPrefix, entityName) {
+    const baseTableName = pluralize(_.snakeCase(entityName));
+    return pluginPrefix ? `${pluginPrefix}_${baseTableName}` : baseTableName;
+}
+
 // ─── Field Renderers ───────────────────────────────────────────────────
 
 function renderDomainModelFields(fields) {
@@ -67,37 +93,124 @@ function renderDomainModelFields(fields) {
 
 function renderDtoFields(fields) {
     return fields.map((f) => {
-        const annotations = [];
-        if (f.required) {
-            if (f.type === 'String' || f.type === 'Text') {
-                annotations.push('    @NotBlank');
-            } else {
-                annotations.push('    @NotNull');
-            }
-        }
-        if (f.type === 'String' && f.length) {
-            annotations.push(`    @Size(max = ${f.length})`);
-        }
+        const annotations = renderDtoValidationAnnotations(f);
         const annotStr = annotations.length ? annotations.join('\n') + '\n' : '';
         const fieldName = f.type === 'ManyToOne' ? f.name + 'Id' : f.name;
         return `${annotStr}    private ${dtoJavaType(f)} ${fieldName};`;
     }).join('\n\n');
 }
 
+function renderDtoValidationAnnotations(field) {
+    const annotations = [];
+    const validation = field.validation || {};
+
+    if (field.required) {
+        if (STRING_TYPES.has(field.type)) {
+            annotations.push('    @NotBlank');
+        } else {
+            annotations.push('    @NotNull');
+        }
+    }
+
+    if (STRING_TYPES.has(field.type)) {
+        const sizeParts = [];
+        if (validation.minLength !== undefined) sizeParts.push(`min = ${validation.minLength}`);
+
+        const maxLength = validation.maxLength !== undefined
+            ? validation.maxLength
+            : field.type === 'String' && field.length
+                ? field.length
+                : undefined;
+
+        if (maxLength !== undefined) sizeParts.push(`max = ${maxLength}`);
+        if (sizeParts.length) annotations.push(`    @Size(${sizeParts.join(', ')})`);
+
+        if (validation.email) annotations.push('    @Email');
+        if (validation.pattern) {
+            const attrs = [`regexp = "${escapeJavaString(validation.pattern)}"`];
+            if (validation.patternMessage) attrs.push(`message = "${escapeJavaString(validation.patternMessage)}"`);
+            annotations.push(`    @Pattern(${attrs.join(', ')})`);
+        }
+    }
+
+    if (INTEGER_TYPES.has(field.type)) {
+        if (validation.min !== undefined) annotations.push(`    @Min(${validation.min})`);
+        if (validation.max !== undefined) annotations.push(`    @Max(${validation.max})`);
+    }
+
+    if (DECIMAL_TYPES.has(field.type)) {
+        if (validation.decimalMin !== undefined) annotations.push(`    @DecimalMin("${escapeJavaString(validation.decimalMin)}")`);
+        if (validation.decimalMax !== undefined) annotations.push(`    @DecimalMax("${escapeJavaString(validation.decimalMax)}")`);
+        if (validation.digits) annotations.push(`    @Digits(integer = ${validation.digits.integer}, fraction = ${validation.digits.fraction})`);
+    }
+
+    if (INTEGER_TYPES.has(field.type) || DECIMAL_TYPES.has(field.type)) {
+        if (validation.positive) annotations.push('    @Positive');
+        if (validation.positiveOrZero) annotations.push('    @PositiveOrZero');
+        if (validation.negative) annotations.push('    @Negative');
+        if (validation.negativeOrZero) annotations.push('    @NegativeOrZero');
+    }
+
+    if (DATE_TYPES.has(field.type)) {
+        if (validation.past) annotations.push('    @Past');
+        if (validation.pastOrPresent) annotations.push('    @PastOrPresent');
+        if (validation.future) annotations.push('    @Future');
+        if (validation.futureOrPresent) annotations.push('    @FutureOrPresent');
+    }
+
+    if (field.type === 'Boolean') {
+        if (validation.assertTrue) annotations.push('    @AssertTrue');
+        if (validation.assertFalse) annotations.push('    @AssertFalse');
+    }
+
+    return annotations;
+}
+
 function renderDtoImports(fields) {
-    const imports = [];
-    const hasNotBlank = fields.some((f) => f.required && (f.type === 'String' || f.type === 'Text'));
-    const hasNotNull = fields.some((f) => f.required && f.type !== 'String' && f.type !== 'Text');
-    const hasSize = fields.some((f) => f.type === 'String' && f.length);
+    const imports = new Set();
 
-    if (hasNotBlank) imports.push('import jakarta.validation.constraints.NotBlank;');
-    if (hasNotNull) imports.push('import jakarta.validation.constraints.NotNull;');
-    if (hasSize) imports.push('import jakarta.validation.constraints.Size;');
+    for (const f of fields) {
+        const validation = f.validation || {};
 
-    const typeImports = collectImports(fields);
-    typeImports.forEach((i) => imports.push(`import ${i};`));
+        if (f.required) {
+            if (STRING_TYPES.has(f.type)) imports.add('jakarta.validation.constraints.NotBlank');
+            else imports.add('jakarta.validation.constraints.NotNull');
+        }
 
-    return imports.length ? imports.join('\n') + '\n' : '';
+        const hasSize = STRING_TYPES.has(f.type) && (
+            validation.minLength !== undefined ||
+            validation.maxLength !== undefined ||
+            (f.type === 'String' && f.length)
+        );
+        if (hasSize) imports.add('jakarta.validation.constraints.Size');
+
+        if (validation.email) imports.add('jakarta.validation.constraints.Email');
+        if (validation.pattern) imports.add('jakarta.validation.constraints.Pattern');
+
+        if (validation.min !== undefined) imports.add('jakarta.validation.constraints.Min');
+        if (validation.max !== undefined) imports.add('jakarta.validation.constraints.Max');
+
+        if (validation.decimalMin !== undefined) imports.add('jakarta.validation.constraints.DecimalMin');
+        if (validation.decimalMax !== undefined) imports.add('jakarta.validation.constraints.DecimalMax');
+        if (validation.digits) imports.add('jakarta.validation.constraints.Digits');
+
+        if (validation.positive) imports.add('jakarta.validation.constraints.Positive');
+        if (validation.positiveOrZero) imports.add('jakarta.validation.constraints.PositiveOrZero');
+        if (validation.negative) imports.add('jakarta.validation.constraints.Negative');
+        if (validation.negativeOrZero) imports.add('jakarta.validation.constraints.NegativeOrZero');
+
+        if (validation.past) imports.add('jakarta.validation.constraints.Past');
+        if (validation.pastOrPresent) imports.add('jakarta.validation.constraints.PastOrPresent');
+        if (validation.future) imports.add('jakarta.validation.constraints.Future');
+        if (validation.futureOrPresent) imports.add('jakarta.validation.constraints.FutureOrPresent');
+
+        if (validation.assertTrue) imports.add('jakarta.validation.constraints.AssertTrue');
+        if (validation.assertFalse) imports.add('jakarta.validation.constraints.AssertFalse');
+    }
+
+    collectImports(fields).forEach((i) => imports.add(i));
+
+    return imports.size ? [...imports].sort().map((i) => `import ${i};`).join('\n') + '\n' : '';
 }
 
 function renderResponseFields(fields) {
@@ -136,10 +249,12 @@ function renderEntityFields(fields) {
         if (f.required) colAttrs.push('nullable = false');
         if (f.unique) colAttrs.push('unique = true');
         if (f.type === 'String' && f.length) colAttrs.push(`length = ${f.length}`);
+        if (f.type === 'Text') colAttrs.push('columnDefinition = "TEXT"');
+        if (f.type === 'MediumText') colAttrs.push('columnDefinition = "MEDIUMTEXT"');
 
         annotations.push(`    @Column(${colAttrs.join(', ')})`);
 
-        if (f.type === 'Text') {
+        if (f.type === 'Text' || f.type === 'MediumText') {
             annotations.push('    @Lob');
         }
         if (f.type === 'Enum') {
@@ -155,14 +270,14 @@ function renderEntityFields(fields) {
 function renderEntityImports(fields) {
     const imports = new Set();
     for (const f of fields) {
-        if (f.filterable) imports.add('gasi.gps.core.starter.infrastructure.filter.Filterable;');
+        if (f.filterable) imports.add('gasi.gps.core.starter.infrastructure.filter.Filterable');
         if (f.type === 'ManyToOne') {
             imports.add('jakarta.persistence.ManyToOne');
             imports.add('jakarta.persistence.JoinColumn');
             imports.add('jakarta.persistence.FetchType');
         } else {
             imports.add('jakarta.persistence.Column');
-            if (f.type === 'Text') imports.add('jakarta.persistence.Lob');
+            if (f.type === 'Text' || f.type === 'MediumText') imports.add('jakarta.persistence.Lob');
             if (f.type === 'Enum') {
                 imports.add('jakarta.persistence.Enumerated');
                 imports.add('jakarta.persistence.EnumType');
@@ -174,23 +289,39 @@ function renderEntityImports(fields) {
     return [...imports].sort().map((i) => `import ${i};`).join('\n') + '\n';
 }
 
-function renderDtoMapperMappings(fields) {
-    const m2oFields = fields.filter((f) => f.type === 'ManyToOne');
+function renderDtoMapperMappings({ createFields, updateFields, summaryFields, detailFields }) {
+    const createM2oFields = createFields.filter((f) => f.type === 'ManyToOne');
+    const updateM2oFields = updateFields.filter((f) => f.type === 'ManyToOne');
+    const summaryM2oFields = summaryFields.filter((f) => f.type === 'ManyToOne');
+    const detailM2oFields = detailFields.filter((f) => f.type === 'ManyToOne');
 
-    const toModelMappings = m2oFields.map((f) =>
+    const toModelMappings = createM2oFields.map((f) =>
         `    @Mapping(target = "${f.name}", ignore = true)`,
     ).join('\n');
 
-    const responseMappings = m2oFields.map((f) =>
+    const updateModelMappings = updateM2oFields.map((f) =>
+        `    @Mapping(target = "${f.name}", ignore = true)`,
+    ).join('\n');
+
+    const summaryMappings = summaryM2oFields.map((f) =>
         `    @Mapping(source = "${f.name}.id", target = "${f.name}Id", qualifiedByName = "encodeId")`,
     ).join('\n');
 
+    const detailMappings = detailM2oFields.map((f) =>
+        `    @Mapping(source = "${f.name}.id", target = "${f.name}Id", qualifiedByName = "encodeId")`,
+    ).join('\n');
+
+    const hasMappings = toModelMappings || updateModelMappings || summaryMappings || detailMappings;
+    const needsIdEncoderField = false;
+
     return {
-        extraImports: m2oFields.length ? 'import org.mapstruct.Mapping;\n' : '',
+        extraImports: hasMappings ? 'import org.mapstruct.Mapping;\n' : '',
+        autowiredImport: needsIdEncoderField ? 'import org.springframework.beans.factory.annotation.Autowired;\n' : '',
+        idEncoderField: needsIdEncoderField ? '    @Autowired\n    protected IdEncoder idEncoder;\n' : '',
         toModelMappings: toModelMappings ? toModelMappings + '\n' : '',
-        updateModelMappings: toModelMappings ? toModelMappings + '\n' : '',
-        summaryMappings: responseMappings ? responseMappings + '\n' : '',
-        detailMappings: responseMappings ? responseMappings + '\n' : '',
+        updateModelMappings: updateModelMappings ? updateModelMappings + '\n' : '',
+        summaryMappings: summaryMappings ? summaryMappings + '\n' : '',
+        detailMappings: detailMappings ? detailMappings + '\n' : '',
     };
 }
 
@@ -213,15 +344,195 @@ function renderMigrationColumns(fields) {
     }).join('\n');
 }
 
-function renderMigrationFkConstraints(fields, tableName) {
+function renderMigrationFkConstraints(fields, tableName, pluginPrefix) {
     const fks = fields.filter((f) => f.type === 'ManyToOne');
     if (!fks.length) return '';
 
     return '\n' + fks.map((f) => {
         const fkCol = _.snakeCase(f.name) + '_id';
-        const refTable = pluralize(_.snakeCase(f.refEntity));
+        const refTable = buildTableName(pluginPrefix, f.refEntity);
         return `ALTER TABLE ${tableName}\n    ADD CONSTRAINT fk_${tableName}_${fkCol}\n    FOREIGN KEY (${fkCol}) REFERENCES ${refTable}(id);`;
     }).join('\n');
+}
+
+function renderServiceContext({ pkg, entityName, fields }) {
+    const createM2oFields = fieldsForDto(fields, 'create').filter((f) => f.type === 'ManyToOne');
+    const updateM2oFields = fieldsForDto(fields, 'update').filter((f) => f.type === 'ManyToOne');
+    const allM2oFields = uniqueManyToOneFields([...createM2oFields, ...updateM2oFields]);
+    const hasRefs = allM2oFields.length > 0;
+
+    const imports = new Set([
+        'org.springframework.stereotype.Service',
+        'gasi.gps.core.starter.infrastructure.i18n.MessageUtil',
+        'gasi.gps.core.starter.infrastructure.util.IdEncoder',
+    ]);
+
+    if (hasRefs) {
+        imports.add('gasi.gps.core.api.application.exception.BusinessException');
+        imports.add('gasi.gps.core.api.application.exception.EntityNotFoundException');
+        imports.add('gasi.gps.core.starter.application.support.ReferenceResolver');
+        imports.add('org.springframework.transaction.annotation.Transactional');
+    }
+
+    for (const field of allM2oFields) {
+        imports.add(`${pkg}.domain.model.${field.refEntity}`);
+        imports.add(`${pkg}.domain.port.outbound.${field.refEntity}RepositoryPort`);
+    }
+
+    return {
+        imports: [...imports].sort().map((i) => `import ${i};`).join('\n') + '\n',
+        fields: renderServiceFields(entityName, allM2oFields, hasRefs),
+        constructorParams: renderServiceConstructorParams(entityName, allM2oFields, hasRefs),
+        constructorAssignments: renderServiceConstructorAssignments(entityName, allM2oFields, hasRefs),
+        referenceMethods: hasRefs
+            ? renderServiceReferenceMethods({ entityName, createM2oFields, updateM2oFields, allM2oFields })
+            : '',
+    };
+}
+
+function uniqueManyToOneFields(fields) {
+    const byName = new Map();
+    for (const field of fields) {
+        byName.set(field.name, field);
+    }
+    return [...byName.values()];
+}
+
+function renderServiceFields(entityName, allM2oFields, hasRefs) {
+    if (!hasRefs) {
+        return '';
+    }
+
+    const entityVar = _.lowerFirst(entityName);
+    const lines = [
+        `    private final ${entityName}RepositoryPort ${entityVar}RepositoryPort;`,
+        `    private final ${entityName}DtoMapper ${entityVar}DtoMapper;`,
+        '    private final ReferenceResolver referenceResolver;',
+        ...uniqueRefEntities(allM2oFields).map((refEntity) =>
+            `    private final ${refEntity}RepositoryPort ${_.lowerFirst(refEntity)}RepositoryPort;`),
+    ];
+
+    return lines.join('\n') + '\n\n';
+}
+
+function renderServiceConstructorParams(entityName, allM2oFields, hasRefs) {
+    const params = [
+        `${entityName}RepositoryPort repositoryPort`,
+        `${entityName}DtoMapper dtoMapper`,
+        'MessageUtil messageUtil',
+        'IdEncoder idEncoder',
+    ];
+
+    if (hasRefs) {
+        params.push('ReferenceResolver referenceResolver');
+        uniqueRefEntities(allM2oFields).forEach((refEntity) => {
+            params.push(`${refEntity}RepositoryPort ${_.lowerFirst(refEntity)}RepositoryPort`);
+        });
+    }
+
+    return params.join(',\n            ');
+}
+
+function renderServiceConstructorAssignments(entityName, allM2oFields, hasRefs) {
+    if (!hasRefs) {
+        return '';
+    }
+
+    const entityVar = _.lowerFirst(entityName);
+    const lines = [
+        `        this.${entityVar}RepositoryPort = repositoryPort;`,
+        `        this.${entityVar}DtoMapper = dtoMapper;`,
+        '        this.referenceResolver = referenceResolver;',
+        ...uniqueRefEntities(allM2oFields).map((refEntity) =>
+            `        this.${_.lowerFirst(refEntity)}RepositoryPort = ${_.lowerFirst(refEntity)}RepositoryPort;`),
+    ];
+
+    return lines.join('\n') + '\n';
+}
+
+function renderServiceReferenceMethods({ entityName, createM2oFields, updateM2oFields, allM2oFields }) {
+    const entityVar = _.lowerFirst(entityName);
+    return `
+    @Override
+    @Transactional
+    public ${entityName}DetailResponse create(${entityName}CreateRequest request) {
+        ResolvedRefs refs = validateAndResolveIds(request);
+        ${entityName} ${entityVar} = ${entityVar}DtoMapper.toCreateDomain(request);
+        applyCreateRefs(${entityVar}, refs);
+        ${entityName} saved = ${entityVar}RepositoryPort.save(${entityVar});
+        return ${entityVar}DtoMapper.toDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public ${entityName}DetailResponse update(Long id, ${entityName}UpdateRequest request) {
+        ResolvedRefs refs = validateAndResolveIds(request);
+        ${entityName} ${entityVar} = ${entityVar}RepositoryPort.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
+        ${entityVar}DtoMapper.updateDomain(request, ${entityVar});
+        applyUpdateRefs(${entityVar}, refs);
+        ${entityName} saved = ${entityVar}RepositoryPort.save(${entityVar});
+        return ${entityVar}DtoMapper.toDetail(saved);
+    }
+
+    private ResolvedRefs validateAndResolveIds(${entityName}CreateRequest request) {
+        BusinessException.Collector collector = new BusinessException.Collector();
+${renderResolveAssignments(createM2oFields)}
+        collector.validate();
+        return new ResolvedRefs(${renderResolvedConstructorArgs(allM2oFields, createM2oFields)});
+    }
+
+    private ResolvedRefs validateAndResolveIds(${entityName}UpdateRequest request) {
+        BusinessException.Collector collector = new BusinessException.Collector();
+${renderResolveAssignments(updateM2oFields)}
+        collector.validate();
+        return new ResolvedRefs(${renderResolvedConstructorArgs(allM2oFields, updateM2oFields)});
+    }
+
+    private void applyCreateRefs(${entityName} ${entityVar}, ResolvedRefs refs) {
+${renderApplyRefs(entityVar, createM2oFields)}
+    }
+
+    private void applyUpdateRefs(${entityName} ${entityVar}, ResolvedRefs refs) {
+${renderApplyRefs(entityVar, updateM2oFields)}
+    }
+
+    private static class ResolvedRefs {
+${allM2oFields.map((field) => `        final ${field.refEntity} ${field.name};`).join('\n')}
+
+        ResolvedRefs(${allM2oFields.map((field) => `${field.refEntity} ${field.name}`).join(', ')}) {
+${allM2oFields.map((field) => `            this.${field.name} = ${field.name};`).join('\n')}
+        }
+    }
+`;
+}
+
+function renderResolveAssignments(fields) {
+    if (!fields.length) {
+        return '';
+    }
+    return fields.map((field) => `        ${field.refEntity} ${field.name} = referenceResolver.resolve(
+                ${_.lowerFirst(field.refEntity)}RepositoryPort,
+                request.get${_.upperFirst(field.name)}Id(),
+                "${field.name}Id",
+                collector);`).join('\n');
+}
+
+function renderResolvedConstructorArgs(allFields, activeFields) {
+    const activeNames = new Set(activeFields.map((field) => field.name));
+    return allFields.map((field) => activeNames.has(field.name) ? field.name : 'null').join(', ');
+}
+
+function renderApplyRefs(entityVar, fields) {
+    if (!fields.length) {
+        return '';
+    }
+    return fields.map((field) => `        ${entityVar}.set${_.upperFirst(field.name)}(refs.${field.name});`).join('\n');
+}
+
+function uniqueRefEntities(fields) {
+    return [...new Set(fields.map((field) => field.refEntity))];
 }
 
 // ─── Main Context Builder ──────────────────────────────────────────────
@@ -239,7 +550,18 @@ function buildResourceContext({ pkg, entityName, tableName, fields, pluginName, 
     const basePkg = pkg.substring(0, pkg.lastIndexOf('.'));
     const pkgPath = basePkg.replace(/\./g, '/');
 
-    const mapperCtx = renderDtoMapperMappings(fields);
+    const createFields = fieldsForDto(fields, 'create');
+    const updateFields = fieldsForDto(fields, 'update');
+    const summaryFields = fieldsForDto(fields, 'summary');
+    const detailFields = fieldsForDto(fields, 'detail');
+
+    const mapperCtx = renderDtoMapperMappings({
+        createFields,
+        updateFields,
+        summaryFields,
+        detailFields,
+    });
+    const serviceCtx = renderServiceContext({ pkg, entityName, fields });
 
     return {
         // Path tokens ([[TOKEN]] in directory/file names)
@@ -261,23 +583,34 @@ function buildResourceContext({ pkg, entityName, tableName, fields, pluginName, 
         DOMAIN_MODEL_FIELDS: renderDomainModelFields(fields),
 
         // DTOs — request
-        CREATE_REQUEST_IMPORTS: renderDtoImports(fields),
-        CREATE_REQUEST_FIELDS: renderDtoFields(fields),
-        UPDATE_REQUEST_IMPORTS: renderDtoImports(fields),
-        UPDATE_REQUEST_FIELDS: renderDtoFields(fields),
+        CREATE_REQUEST_IMPORTS: renderDtoImports(createFields),
+        CREATE_REQUEST_FIELDS: renderDtoFields(createFields),
+        UPDATE_REQUEST_IMPORTS: renderDtoImports(updateFields),
+        UPDATE_REQUEST_FIELDS: renderDtoFields(updateFields),
 
         // DTOs — response
-        SUMMARY_RESPONSE_IMPORTS: renderResponseImports(fields),
-        SUMMARY_RESPONSE_FIELDS: renderResponseFields(fields),
-        DETAIL_RESPONSE_IMPORTS: renderResponseImports(fields),
-        DETAIL_RESPONSE_FIELDS: renderResponseFields(fields),
+        SUMMARY_RESPONSE_IMPORTS: renderResponseImports(summaryFields),
+        SUMMARY_RESPONSE_FIELDS: renderResponseFields(summaryFields),
+        DETAIL_RESPONSE_IMPORTS: renderResponseImports(detailFields),
+        DETAIL_RESPONSE_FIELDS: renderResponseFields(detailFields),
 
         // DTO Mapper
         DTO_MAPPER_EXTRA_IMPORTS: mapperCtx.extraImports,
+        DTO_MAPPER_AUTOWIRED_IMPORT: mapperCtx.autowiredImport,
+        DTO_MAPPER_ID_ENCODER_FIELD: mapperCtx.idEncoderField,
         DTO_MAPPER_TO_MODEL_MAPPINGS: mapperCtx.toModelMappings,
         DTO_MAPPER_UPDATE_MODEL_MAPPINGS: mapperCtx.updateModelMappings,
         DTO_MAPPER_SUMMARY_MAPPINGS: mapperCtx.summaryMappings,
         DTO_MAPPER_DETAIL_MAPPINGS: mapperCtx.detailMappings,
+        DTO_MAPPER_CHILD_IMPORTS: '',
+        DTO_MAPPER_CHILD_METHODS: '',
+
+        // Service
+        SERVICE_IMPORTS: serviceCtx.imports,
+        SERVICE_FIELDS: serviceCtx.fields,
+        SERVICE_CONSTRUCTOR_PARAMS: serviceCtx.constructorParams,
+        SERVICE_CONSTRUCTOR_ASSIGNMENTS: serviceCtx.constructorAssignments,
+        SERVICE_REFERENCE_METHODS: serviceCtx.referenceMethods,
 
         // JPA Entity
         ENTITY_IMPORTS: renderEntityImports(fields),
@@ -285,7 +618,7 @@ function buildResourceContext({ pkg, entityName, tableName, fields, pluginName, 
 
         // Migration
         MIGRATION_COLUMNS: renderMigrationColumns(fields),
-        MIGRATION_FK_CONSTRAINTS: renderMigrationFkConstraints(fields, tableName),
+        MIGRATION_FK_CONSTRAINTS: renderMigrationFkConstraints(fields, tableName, pluginPrefix),
     };
 }
 

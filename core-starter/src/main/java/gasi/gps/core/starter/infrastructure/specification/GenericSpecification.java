@@ -12,6 +12,7 @@ import gasi.gps.core.api.domain.model.SimpleFilter;
 import gasi.gps.core.starter.infrastructure.filter.FilterableFieldResolver;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
@@ -87,19 +88,28 @@ public class GenericSpecification<T> implements Specification<T> {
         }
 
         String field = FilterableFieldResolver.resolve(root.getJavaType(), sf.getField());
+        Path<?> path = resolvePath(root, field);
         Object value = sf.getValue();
 
         return switch (sf.getOperator()) {
-            case EQUALS -> cb.equal(root.get(field), value);
-            case NOT_EQUALS -> cb.notEqual(root.get(field), value);
-            case GREATER_THAN -> cb.greaterThan(root.get(field), (Comparable) value);
-            case GREATER_THAN_OR_EQUALS -> cb.greaterThanOrEqualTo(root.get(field), (Comparable) value);
-            case LESS_THAN -> cb.lessThan(root.get(field), (Comparable) value);
-            case LESS_THAN_OR_EQUALS -> cb.lessThanOrEqualTo(root.get(field), (Comparable) value);
-            case LIKE -> cb.like(root.get(field), "%" + value + "%");
-            case IN -> root.get(field).in((Collection<?>) value);
-            case IS_NULL -> cb.isNull(root.get(field));
-            case IS_NOT_NULL -> cb.isNotNull(root.get(field));
+            case EQUALS -> cb.equal(path, value);
+            case NOT_EQUALS -> cb.notEqual(path, value);
+            case GREATER_THAN -> cb.greaterThan((Path<? extends Comparable>) path, (Comparable) value);
+            case GREATER_THAN_OR_EQUALS -> cb.greaterThanOrEqualTo((Path<? extends Comparable>) path, (Comparable) value);
+            case LESS_THAN -> cb.lessThan((Path<? extends Comparable>) path, (Comparable) value);
+            case LESS_THAN_OR_EQUALS -> cb.lessThanOrEqualTo((Path<? extends Comparable>) path, (Comparable) value);
+            case LIKE -> cb.like(path.as(String.class), "%" + value + "%");
+            case IN -> path.in((Collection<?>) value);
+            case IS_NULL -> cb.isNull(path);
+            case IS_NOT_NULL -> cb.isNotNull(path);
         };
+    }
+
+    private Path<?> resolvePath(Root<T> root, String field) {
+        Path<?> path = root;
+        for (String part : field.split("\\.")) {
+            path = path.get(part);
+        }
+        return path;
     }
 }

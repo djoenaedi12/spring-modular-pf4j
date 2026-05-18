@@ -5,6 +5,8 @@ Developer toolkit untuk modular Spring Boot + PF4J project. CLI ini menyediakan 
 - scaffold, build, deploy, clean, list, dan delete plugin
 - generate dan delete resource CRUD di dalam plugin
 - generate resource secara interactive atau dari file JSON
+- mengatur field yang masuk ke DTO create/update/summary/detail
+- menambahkan basic validation annotation dari resource spec
 
 ## Install
 
@@ -274,6 +276,29 @@ Jika dijalankan dari dalam folder plugin, CLI akan mendeteksi plugin secara otom
 
 Jika dijalankan dari project root, CLI akan menampilkan pilihan target plugin.
 
+Pada mode interactive, setiap field akan ditanya:
+
+- nama field
+- tipe field
+- konfigurasi khusus tipe, misalnya `length`, `enumName`, atau `refEntity`
+- `required`
+- `unique` jika tipe field mendukung
+- `filterable`
+- DTO inclusion
+- extra validation
+
+DTO inclusion menggunakan checkbox dan default-nya semua tercentang:
+
+```text
+Include "employeeNo" in DTOs:
+ ◉ Create Request
+ ◉ Update Request
+ ◉ Summary Response
+ ◉ Detail Response
+```
+
+User bisa uncheck DTO yang tidak membutuhkan field tersebut.
+
 ### Resource create — dari file JSON
 
 ```bash
@@ -387,6 +412,83 @@ gasi resource create \
 }
 ```
 
+### Parent / child resource
+
+Resource bisa dibuat sebagai child dari resource lain dengan menambahkan `parent`.
+Format field tetap sama seperti resource biasa; CLI hanya menambahkan relasi parent
+secara otomatis.
+
+```json
+{
+  "resources": [
+    {
+      "entityName": "Role",
+      "fields": [
+        {
+          "name": "code",
+          "type": "String",
+          "length": 50,
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "length": 150,
+          "required": true
+        }
+      ]
+    },
+    {
+      "entityName": "Permission",
+      "parent": "Role",
+      "as": "permissions",
+      "fields": [
+        {
+          "name": "action",
+          "type": "ManyToOne",
+          "refEntity": "Action",
+          "required": true
+        },
+        {
+          "name": "resource",
+          "type": "ManyToOne",
+          "refEntity": "Resource",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entityName": "RoleMenu",
+      "parent": "Role",
+      "as": "menuIds",
+      "fields": [
+        {
+          "name": "menu",
+          "type": "ManyToOne",
+          "refEntity": "Menu",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+Rule default:
+
+| Property | Default | Keterangan |
+|----------|---------|------------|
+| `parent` | - | Jika diisi, resource dianggap child |
+| `as` | plural dari `entityName` | Nama field child saat parent wiring ditambahkan |
+| `exposeApi` | `true` untuk root, `false` untuk child | Jika `false`, controller, service API, DTO CRUD, dan inbound port tidak dibuat |
+
+Untuk child, CLI tetap membuat domain model, JPA entity, repository port,
+repository adapter, mapper, repository JPA, dan migration. Field parent otomatis
+ditambahkan sebagai `ManyToOne`, misalnya `Permission.parent = Role` menghasilkan
+field `role`. Wiring ke parent DTO/service bisa ditambahkan setelah resource
+tergenerate sesuai kebutuhan aggregate.
+
 ### Format JSON: array root
 
 Selain object dengan property `resources`, root JSON juga boleh langsung berupa array.
@@ -425,8 +527,8 @@ Selain object dengan property `resources`, root JSON juga boleh langsung berupa 
 | Type         | Keterangan                                              |
 |--------------|----------------------------------------------------------|
 | `String`     | Text pendek, mendukung `length`                          |
-| `Text`       | Text panjang                                             |
-| `MediumText` | Text panjang MySQL/MariaDB `MEDIUMTEXT`, jika template mendukung |
+| `Text`       | Text panjang, biasanya `TEXT`                            |
+| `MediumText` | Text panjang MySQL/MariaDB `MEDIUMTEXT`                  |
 | `Integer`    | Integer number                                           |
 | `Long`       | Long number                                              |
 | `BigDecimal` | Decimal number                                           |
@@ -440,17 +542,398 @@ Selain object dengan property `resources`, root JSON juga boleh langsung berupa 
 
 ### Field properties
 
-| Property    | Wajib | Keterangan                                           |
-|-------------|-------|------------------------------------------------------|
-| `name`      | Ya    | Nama field camelCase                                 |
-| `type`      | Ya    | Salah satu field type yang didukung                  |
-| `length`    | Untuk `String` optional | Default `255` jika tidak diisi       |
-| `required`  | Tidak | Default `true`                                       |
-| `unique`    | Tidak | Hanya untuk `String`, `Integer`, dan `Long`          |
-| `enumName`  | Untuk `Enum` | Nama enum PascalCase, mis. `EmployeeStatus` |
-| `refEntity` | Untuk `ManyToOne` | Nama entity tujuan PascalCase, mis. `Department` |
+| Property     | Wajib | Keterangan                                           |
+|--------------|-------|------------------------------------------------------|
+| `name`       | Ya    | Nama field camelCase                                 |
+| `type`       | Ya    | Salah satu field type yang didukung                  |
+| `length`     | Tidak | Untuk `String`, default `255` jika tidak diisi       |
+| `required`   | Tidak | Default `true`                                       |
+| `unique`     | Tidak | Hanya untuk `String`, `Integer`, dan `Long`          |
+| `filterable` | Tidak | Default `true`; menentukan field masuk filter/search |
+| `dto`        | Tidak | Mengatur field masuk DTO create/update/summary/detail |
+| `validation` | Tidak | Extra validation annotation untuk DTO request        |
+| `enumName`   | Untuk `Enum` | Nama enum PascalCase, mis. `EmployeeStatus` |
+| `refEntity`  | Untuk `ManyToOne` | Nama entity tujuan PascalCase, mis. `Department` |
 
-### Table name dari plugin prefix
+Untuk field normal `ManyToOne`, DTO request memakai encoded ID, misalnya field
+`department` menjadi `departmentId`. Generated service akan me-resolve ID
+tersebut melalui `{RefEntity}RepositoryPort` dengan `ReferenceResolver`,
+mengumpulkan semua reference error, lalu mengisi relasi domain sebelum save atau
+update.
+
+## DTO Inclusion
+
+Tidak semua field entity harus masuk ke semua DTO.
+
+Generator mendukung konfigurasi DTO per field melalui property `dto`.
+
+```json
+{
+  "name": "employeeNo",
+  "type": "String",
+  "length": 50,
+  "required": true,
+  "unique": true,
+  "dto": {
+    "create": true,
+    "update": false,
+    "summary": true,
+    "detail": true
+  }
+}
+```
+
+Hasilnya:
+
+```text
+EmployeeCreateRequest   -> employeeNo masuk
+EmployeeUpdateRequest   -> employeeNo tidak masuk
+EmployeeSummaryResponse -> employeeNo masuk
+EmployeeDetailResponse  -> employeeNo masuk
+```
+
+Jika `dto` tidak diisi, default-nya semua `true`:
+
+```json
+{
+  "name": "fullName",
+  "type": "String"
+}
+```
+
+Sama dengan:
+
+```json
+{
+  "name": "fullName",
+  "type": "String",
+  "dto": {
+    "create": true,
+    "update": true,
+    "summary": true,
+    "detail": true
+  }
+}
+```
+
+Jika `dto` hanya diisi sebagian, property lain dianggap `true`.
+
+Contoh:
+
+```json
+{
+  "name": "employeeNo",
+  "type": "String",
+  "dto": {
+    "update": false
+  }
+}
+```
+
+Artinya:
+
+```text
+create  = true
+update  = false
+summary = true
+detail  = true
+```
+
+DTO keys yang didukung:
+
+| Key       | DTO yang terpengaruh             |
+|-----------|----------------------------------|
+| `create`  | `{Entity}CreateRequest`          |
+| `update`  | `{Entity}UpdateRequest`          |
+| `summary` | `{Entity}SummaryResponse`        |
+| `detail`  | `{Entity}DetailResponse`         |
+
+## Filterable Field
+
+Property `filterable` menentukan apakah field dapat dimasukkan ke filter/search generated resource.
+
+```json
+{
+  "name": "fullName",
+  "type": "String",
+  "length": 150,
+  "filterable": true
+}
+```
+
+Jika tidak diisi, default-nya `true`.
+
+Gunakan `false` untuk field yang tidak perlu difilter, misalnya field text panjang:
+
+```json
+{
+  "name": "notes",
+  "type": "MediumText",
+  "filterable": false
+}
+```
+
+## Extra Validation
+
+Selain validasi dasar dari `required` dan `length`, generator mendukung extra validation melalui property `validation`.
+
+Validasi dasar:
+
+| Source              | Annotation yang biasanya dibuat              |
+|---------------------|-----------------------------------------------|
+| `required: true` pada `String/Text/MediumText` | `@NotBlank`              |
+| `required: true` pada tipe non-string          | `@NotNull`               |
+| `length` pada `String`                         | `@Size(max = length)`    |
+
+Extra validation tergantung tipe field.
+
+### String / Text / MediumText validation
+
+| Key              | Annotation                       |
+|------------------|----------------------------------|
+| `email`          | `@Email`                         |
+| `minLength`      | `@Size(min = ...)`               |
+| `maxLength`      | `@Size(max = ...)`               |
+| `pattern`        | `@Pattern(regexp = "...")`      |
+| `patternMessage` | message untuk `@Pattern`         |
+
+Contoh:
+
+```json
+{
+  "name": "email",
+  "type": "String",
+  "length": 150,
+  "required": true,
+  "validation": {
+    "email": true,
+    "minLength": 5,
+    "maxLength": 150
+  }
+}
+```
+
+Contoh pattern:
+
+```json
+{
+  "name": "employeeNo",
+  "type": "String",
+  "length": 50,
+  "validation": {
+    "pattern": "^[A-Z0-9_-]+$",
+    "patternMessage": "Employee number may only contain uppercase letters, numbers, underscore, or dash"
+  }
+}
+```
+
+### Integer / Long validation
+
+| Key              | Annotation          |
+|------------------|---------------------|
+| `min`            | `@Min`              |
+| `max`            | `@Max`              |
+| `positive`       | `@Positive`         |
+| `positiveOrZero` | `@PositiveOrZero`   |
+| `negative`       | `@Negative`         |
+| `negativeOrZero` | `@NegativeOrZero`   |
+
+Contoh:
+
+```json
+{
+  "name": "age",
+  "type": "Integer",
+  "validation": {
+    "min": 18,
+    "max": 60
+  }
+}
+```
+
+### BigDecimal / Double validation
+
+| Key              | Annotation          |
+|------------------|---------------------|
+| `decimalMin`     | `@DecimalMin`       |
+| `decimalMax`     | `@DecimalMax`       |
+| `digits`         | `@Digits`           |
+| `positive`       | `@Positive`         |
+| `positiveOrZero` | `@PositiveOrZero`   |
+| `negative`       | `@Negative`         |
+| `negativeOrZero` | `@NegativeOrZero`   |
+
+Contoh:
+
+```json
+{
+  "name": "salary",
+  "type": "BigDecimal",
+  "validation": {
+    "decimalMin": "0.00",
+    "decimalMax": "999999999.99",
+    "digits": {
+      "integer": 12,
+      "fraction": 2
+    }
+  }
+}
+```
+
+### Date / DateTime / Instant validation
+
+| Key               | Annotation             |
+|-------------------|------------------------|
+| `past`            | `@Past`                |
+| `pastOrPresent`   | `@PastOrPresent`       |
+| `future`          | `@Future`              |
+| `futureOrPresent` | `@FutureOrPresent`     |
+
+Contoh:
+
+```json
+{
+  "name": "effectiveDate",
+  "type": "Date",
+  "validation": {
+    "futureOrPresent": true
+  }
+}
+```
+
+### Boolean validation
+
+| Key           | Annotation       |
+|---------------|------------------|
+| `assertTrue`  | `@AssertTrue`    |
+| `assertFalse` | `@AssertFalse`   |
+
+Contoh:
+
+```json
+{
+  "name": "accepted",
+  "type": "Boolean",
+  "validation": {
+    "assertTrue": true
+  }
+}
+```
+
+### Catatan kombinasi validation
+
+Beberapa validation bisa digabung, misalnya:
+
+```json
+{
+  "validation": {
+    "minLength": 3,
+    "maxLength": 50,
+    "pattern": "^[a-zA-Z0-9_]+$"
+  }
+}
+```
+
+Namun beberapa validation bersifat eksklusif:
+
+| Type        | Eksklusif |
+|-------------|-----------|
+| Numeric     | Pilih salah satu dari `positive`, `positiveOrZero`, `negative`, `negativeOrZero` |
+| Date        | Pilih salah satu dari `past`, `pastOrPresent`, `future`, `futureOrPresent` |
+| Boolean     | Pilih salah satu dari `assertTrue`, `assertFalse` |
+
+## Contoh JSON lengkap
+
+```json
+{
+  "entityName": "Employee",
+  "fields": [
+    {
+      "name": "employeeNo",
+      "type": "String",
+      "length": 50,
+      "required": true,
+      "unique": true,
+      "filterable": true,
+      "dto": {
+        "update": false
+      },
+      "validation": {
+        "minLength": 3,
+        "maxLength": 50,
+        "pattern": "^[A-Z0-9_-]+$",
+        "patternMessage": "Employee number may only contain uppercase letters, numbers, underscore, or dash"
+      }
+    },
+    {
+      "name": "fullName",
+      "type": "String",
+      "length": 150,
+      "required": true,
+      "filterable": true,
+      "validation": {
+        "minLength": 3,
+        "maxLength": 150
+      }
+    },
+    {
+      "name": "email",
+      "type": "String",
+      "length": 150,
+      "required": false,
+      "filterable": true,
+      "dto": {
+        "summary": false
+      },
+      "validation": {
+        "email": true,
+        "maxLength": 150
+      }
+    },
+    {
+      "name": "notes",
+      "type": "MediumText",
+      "required": false,
+      "filterable": false,
+      "dto": {
+        "create": true,
+        "update": true,
+        "summary": false,
+        "detail": true
+      }
+    },
+    {
+      "name": "salary",
+      "type": "BigDecimal",
+      "required": false,
+      "filterable": false,
+      "validation": {
+        "decimalMin": "0.00",
+        "digits": {
+          "integer": 12,
+          "fraction": 2
+        }
+      }
+    },
+    {
+      "name": "status",
+      "type": "Enum",
+      "enumName": "EmployeeStatus",
+      "required": true,
+      "filterable": true
+    },
+    {
+      "name": "department",
+      "type": "ManyToOne",
+      "refEntity": "Department",
+      "required": true,
+      "filterable": true
+    }
+  ]
+}
+```
+
+## Table name dari plugin prefix
 
 `resource create` membaca `plugin.prefix` dari:
 

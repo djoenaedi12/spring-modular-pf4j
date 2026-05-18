@@ -18,6 +18,7 @@ import gasi.gps.core.api.application.exception.BusinessException;
 public final class FilterableFieldResolver {
 
     private static final Map<Class<?>, Map<String, String>> CACHE = new ConcurrentHashMap<>();
+    private static final String PATH_SEPARATOR = ".";
 
     private FilterableFieldResolver() {
     }
@@ -36,11 +37,45 @@ public final class FilterableFieldResolver {
             throw new BusinessException("Filter field is required");
         }
 
-        String entityField = filterableFields(entityClass).get(publicField);
+        String entityField = resolvePath(entityClass, publicField);
         if (entityField == null) {
             throw new BusinessException("Filter field is not allowed: " + publicField);
         }
         return entityField;
+    }
+
+    private static String resolvePath(Class<?> entityClass, String publicField) {
+        if (!publicField.contains(PATH_SEPARATOR)) {
+            return filterableFields(entityClass).get(publicField);
+        }
+
+        String[] pathParts = publicField.split("\\.", -1);
+        Class<?> currentClass = entityClass;
+        StringBuilder resolvedPath = new StringBuilder();
+
+        for (String pathPart : pathParts) {
+            if (pathPart.isBlank()) {
+                return null;
+            }
+
+            String resolvedPart = filterableFields(currentClass).get(pathPart);
+            if (resolvedPart == null) {
+                return null;
+            }
+
+            if (resolvedPath.length() > 0) {
+                resolvedPath.append(PATH_SEPARATOR);
+            }
+            resolvedPath.append(resolvedPart);
+
+            Field field = findField(currentClass, resolvedPart);
+            if (field == null) {
+                return null;
+            }
+            currentClass = field.getType();
+        }
+
+        return resolvedPath.toString();
     }
 
     private static Map<String, String> filterableFields(Class<?> entityClass) {
@@ -72,5 +107,17 @@ public final class FilterableFieldResolver {
         }
 
         return Map.copyOf(fields);
+    }
+
+    private static Field findField(Class<?> entityClass, String fieldName) {
+        Class<?> current = entityClass;
+        while (current != null && current != Object.class) {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        return null;
     }
 }

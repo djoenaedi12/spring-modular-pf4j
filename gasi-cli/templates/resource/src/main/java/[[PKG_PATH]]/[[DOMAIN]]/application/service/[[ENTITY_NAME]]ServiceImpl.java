@@ -1,7 +1,6 @@
 package {{FULL_PACKAGE}}.application.service;
 
-import org.springframework.stereotype.Service;
-
+{{SERVICE_IMPORTS}}
 import gasi.gps.core.starter.application.service.BaseServiceImpl;
 import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}CreateRequest;
 import {{FULL_PACKAGE}}.application.dto.{{ENTITY_NAME}}DetailResponse;
@@ -17,12 +16,16 @@ public class {{ENTITY_NAME}}ServiceImpl
         extends BaseServiceImpl<{{ENTITY_NAME}}, {{ENTITY_NAME}}CreateRequest, {{ENTITY_NAME}}UpdateRequest, {{ENTITY_NAME}}SummaryResponse, {{ENTITY_NAME}}DetailResponse>
         implements {{ENTITY_NAME}}Service {
 
-    public {{ENTITY_NAME}}ServiceImpl({{ENTITY_NAME}}RepositoryPort repositoryPort, {{ENTITY_NAME}}DtoMapper dtoMapper) {
-        super(repositoryPort, dtoMapper);
+{{SERVICE_FIELDS}}
+    public {{ENTITY_NAME}}ServiceImpl({{SERVICE_CONSTRUCTOR_PARAMS}}) {
+        super(repositoryPort, dtoMapper, messageUtil, idEncoder);
+{{SERVICE_CONSTRUCTOR_ASSIGNMENTS}}
     }
 
     @Override
     protected String resourceType() {
         return "{{ENTITY_NAME}}";
     }
+
+{{SERVICE_REFERENCE_METHODS}}
 }

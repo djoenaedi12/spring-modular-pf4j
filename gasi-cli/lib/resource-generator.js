@@ -11,7 +11,7 @@ async function resolvePluginPackage(pluginDir) {
     const propsFile = path.join(pluginDir, 'src', 'main', 'resources', 'plugin.properties');
     if (await fs.pathExists(propsFile)) {
         const content = await fs.readFile(propsFile, 'utf8');
-        const match = content.match(/^plugin\.class\s*=\s*(.+)$/m);
+        const match = content.match(/^plugin\.class[ \t]*=[ \t]*([^\r\n]*)/m);
         if (match) {
             const fqcn = match[1].trim();
             const lastDot = fqcn.lastIndexOf('.');
@@ -43,9 +43,21 @@ function extractDomain(pkg) {
  *
  * @returns {string[]} list of absolute paths of generated files.
  */
-async function generateResource({ cwd, pluginDir, pluginName, pluginPrefix, entityName, tableName, fields }) {
+async function generateResource({
+    cwd,
+    pluginDir,
+    pluginName,
+    pluginPrefix,
+    entityName,
+    tableName,
+    fields,
+    parent,
+    as,
+    exposeApi,
+}) {
     const pkg = await resolvePluginPackage(pluginDir);
     const domain = extractDomain(pkg);
+    const effectiveExposeApi = exposeApi !== false;
 
     // Build the context with all computed token values
     const ctx = buildResourceContext({
@@ -56,6 +68,9 @@ async function generateResource({ cwd, pluginDir, pluginName, pluginPrefix, enti
         pluginName,
         pluginPrefix,
         domain,
+        parent,
+        as,
+        exposeApi: effectiveExposeApi,
     });
 
     // Collect files before rendering to check for conflicts
@@ -63,13 +78,15 @@ async function generateResource({ cwd, pluginDir, pluginName, pluginPrefix, enti
     const targetRoot = path.join(pluginDir);
 
     // Check for existing files first
-    await checkConflicts(templateRoot, targetRoot, ctx);
+    const shouldInclude = (relPath) => shouldIncludeTemplate(relPath, effectiveExposeApi);
+
+    await checkConflicts(templateRoot, targetRoot, ctx, shouldInclude);
 
     // Render all templates into the plugin directory
-    await renderTemplateTree(templateRoot, targetRoot, ctx, { includeFlyway: true });
+    await renderTemplateTree(templateRoot, targetRoot, ctx, { includeFlyway: true, shouldInclude });
 
     // Collect generated file paths for reporting
-    const generated = await collectGeneratedPaths(templateRoot, targetRoot, ctx);
+    const generated = await collectGeneratedPaths(templateRoot, targetRoot, ctx, shouldInclude);
 
     return generated;
 }
@@ -78,13 +95,15 @@ async function generateResource({ cwd, pluginDir, pluginName, pluginPrefix, enti
  * Walk the template tree and check if any target file already exists.
  * Throws on conflict to avoid accidental overwrites.
  */
-async function checkConflicts(templateRoot, targetRoot, ctx) {
+async function checkConflicts(templateRoot, targetRoot, ctx, shouldInclude) {
     const entries = await walk(templateRoot);
 
     for (const entry of entries) {
         if (entry.isDirectory) continue;
 
         const relPath = path.relative(templateRoot, entry.fullPath);
+        if (shouldInclude && !shouldInclude(relPath)) continue;
+
         const renderedRelPath = replacePathTokens(relPath, ctx);
         const targetPath = path.join(targetRoot, renderedRelPath);
 
@@ -97,7 +116,7 @@ async function checkConflicts(templateRoot, targetRoot, ctx) {
 /**
  * Collect the absolute paths of all files that were generated.
  */
-async function collectGeneratedPaths(templateRoot, targetRoot, ctx) {
+async function collectGeneratedPaths(templateRoot, targetRoot, ctx, shouldInclude) {
     const entries = await walk(templateRoot);
     const paths = [];
 
@@ -105,6 +124,8 @@ async function collectGeneratedPaths(templateRoot, targetRoot, ctx) {
         if (entry.isDirectory) continue;
 
         const relPath = path.relative(templateRoot, entry.fullPath);
+        if (shouldInclude && !shouldInclude(relPath)) continue;
+
         const renderedRelPath = replacePathTokens(relPath, ctx);
         const targetPath = path.join(targetRoot, renderedRelPath);
         paths.push(targetPath);
@@ -134,6 +155,23 @@ async function walk(dir) {
     }
     await recurse(dir);
     return out;
+}
+
+function shouldIncludeTemplate(relPath, exposeApi) {
+    if (exposeApi) {
+        return true;
+    }
+
+    const normalized = relPath.split(path.sep).join('/');
+    const apiOnlySegments = [
+        '/application/dto/',
+        '/application/mapper/',
+        '/application/service/',
+        '/domain/port/inbound/',
+        '/presentation/controller/',
+    ];
+
+    return !apiOnlySegments.some((segment) => normalized.includes(segment));
 }
 
 module.exports = { generateResource };

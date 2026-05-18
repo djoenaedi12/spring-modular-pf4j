@@ -22,6 +22,10 @@ async function renderTemplateTree(templateRoot, targetRoot, ctx, opts = {}) {
             continue;
         }
 
+        if (typeof opts.shouldInclude === 'function' && !opts.shouldInclude(relPath, entry)) {
+            continue;
+        }
+
         const renderedRelPath = replacePathTokens(relPath, ctx);
         const targetPath = path.join(targetRoot, renderedRelPath);
 
@@ -30,7 +34,7 @@ async function renderTemplateTree(templateRoot, targetRoot, ctx, opts = {}) {
         } else {
             await fs.ensureDir(path.dirname(targetPath));
             const content = await fs.readFile(entry.fullPath, 'utf8');
-            const rendered = replaceContentTokens(content, ctx);
+            const rendered = normalizeRenderedContent(replaceContentTokens(content, ctx), renderedRelPath);
             await fs.writeFile(targetPath, rendered, 'utf8');
         }
     }
@@ -62,4 +66,23 @@ function replaceContentTokens(content, ctx) {
     return content.replace(/\{\{([A-Z0-9_]+)\}\}/g, (match, key) => (key in ctx ? ctx[key] : match));
 }
 
-module.exports = { renderTemplateTree };
+function normalizeRenderedContent(content, relPath = '') {
+    if (!relPath.endsWith('.java')) {
+        return content;
+    }
+
+    let normalized = content.replace(/[ \t]+$/gm, '');
+
+    // Keep generated import blocks compact even when optional import tokens are empty.
+    normalized = normalized.replace(/(import [^;]+;\n)\n+(import )/g, '$1$2');
+
+    // Keep annotations directly attached to the method they annotate.
+    normalized = normalized.replace(/(    @[^\n]+)\n\n+(    @(Override|Mapping))/g, '$1\n$2');
+
+    // Collapse excessive empty vertical space introduced by empty template tokens.
+    normalized = normalized.replace(/\n{3,}/g, '\n\n');
+
+    return normalized.trimEnd() + '\n';
+}
+
+module.exports = { renderTemplateTree, normalizeRenderedContent };
