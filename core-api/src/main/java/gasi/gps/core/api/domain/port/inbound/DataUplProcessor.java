@@ -1,18 +1,21 @@
 package gasi.gps.core.api.domain.port.inbound;
 
 import java.util.List;
+import java.util.Map;
 
 import gasi.gps.core.api.domain.model.DataRowUpl;
-import gasi.gps.core.api.domain.model.DataUplCommand;
 import gasi.gps.core.api.domain.model.DataUpl;
+import gasi.gps.core.api.file.FileRow;
 
 /**
  * Resource-specific processor for shared upload workflows.
  *
- * <p>Each uploadable resource contributes one processor bean. The shared
+ * <p>
+ * Each uploadable resource contributes one processor bean. The shared
  * upload service owns persistence and workflow status changes, while
  * processors own parsing, row validation, and committing data to the target
- * resource.</p>
+ * resource.
+ * </p>
  *
  * @since 1.0.0
  */
@@ -28,29 +31,36 @@ public interface DataUplProcessor {
     /**
      * Parses an uploaded file into upload rows.
      *
-     * @param upload uploaded file command
+     * @param rows    file rows to parse
      * @param dataUpl persisted upload header
+     * @param params  additional parameters for parsing, e.g. from the API request
      * @return parsed rows
      */
-    List<DataRowUpl> parse(DataUplCommand upload, DataUpl dataUpl);
+    List<DataRowUpl> parse(List<FileRow> rows, DataUpl dataUpl, Map<String, String> params);
 
     /**
      * Validates upload rows.
      *
-     * <p>Processors should validate rows in batch so they can preload reference
-     * data once, perform cross-row checks, and avoid one database query per row.</p>
+     * <p>
+     * Processors should validate rows in batch so they can preload reference
+     * data once, perform cross-row checks, and avoid one database query per row.
+     * </p>
      *
      * @param dataUpl upload header
      * @param rows    rows to validate
+     * @param params  additional parameters for validation, e.g. from the API
+     *                request
      * @return validated rows
      */
-    List<DataRowUpl> validateRows(DataUpl dataUpl, List<DataRowUpl> rows);
+    List<DataRowUpl> validateRows(DataUpl dataUpl, List<DataRowUpl> rows, Map<String, String> params);
 
     /**
      * Commits valid rows to the target resource.
      *
      * @param dataUpl upload header
      * @param rows    valid rows to commit
+     * @param params  additional parameters for committing, e.g. from the API
+     *                request
      */
-    void commitRows(DataUpl dataUpl, List<DataRowUpl> rows);
+    void commitRows(DataUpl dataUpl, List<DataRowUpl> rows, Map<String, String> params);
 }

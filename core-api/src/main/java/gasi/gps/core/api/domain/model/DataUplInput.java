@@ -3,7 +3,7 @@ package gasi.gps.core.api.domain.model;
 import java.io.InputStream;
 import java.util.Map;
 
-import gasi.gps.core.api.file.FileReadCommand;
+import gasi.gps.core.api.file.FileReadInput;
 
 /**
  * Command payload for a data upload request.
@@ -16,11 +16,11 @@ import gasi.gps.core.api.file.FileReadCommand;
  * @param parameters   extra upload parameters sent by the client
  * @since 1.0.0
  */
-public record DataUplCommand(
+public record DataUplInput(
         String originalName,
         String contentType,
         long fileSize,
         InputStream inputStream,
         String resource,
-        Map<String, String> parameters) implements FileReadCommand {
+        Map<String, String> parameters) implements FileReadInput {
 }

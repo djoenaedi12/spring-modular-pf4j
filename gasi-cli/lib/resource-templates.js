@@ -369,9 +369,7 @@ function renderServiceContext({ pkg, entityName, fields }) {
 
     if (hasRefs) {
         imports.add('gasi.gps.core.api.application.exception.BusinessException');
-        imports.add('gasi.gps.core.api.application.exception.EntityNotFoundException');
         imports.add('gasi.gps.core.starter.application.support.ReferenceResolver');
-        imports.add('org.springframework.transaction.annotation.Transactional');
     }
 
     for (const field of allM2oFields) {
@@ -403,10 +401,7 @@ function renderServiceFields(entityName, allM2oFields, hasRefs) {
         return '';
     }
 
-    const entityVar = _.lowerFirst(entityName);
     const lines = [
-        `    private final ${entityName}RepositoryPort ${entityVar}RepositoryPort;`,
-        `    private final ${entityName}DtoMapper ${entityVar}DtoMapper;`,
         '    private final ReferenceResolver referenceResolver;',
         ...uniqueRefEntities(allM2oFields).map((refEntity) =>
             `    private final ${refEntity}RepositoryPort ${_.lowerFirst(refEntity)}RepositoryPort;`),
@@ -438,10 +433,7 @@ function renderServiceConstructorAssignments(entityName, allM2oFields, hasRefs) 
         return '';
     }
 
-    const entityVar = _.lowerFirst(entityName);
     const lines = [
-        `        this.${entityVar}RepositoryPort = repositoryPort;`,
-        `        this.${entityVar}DtoMapper = dtoMapper;`,
         '        this.referenceResolver = referenceResolver;',
         ...uniqueRefEntities(allM2oFields).map((refEntity) =>
             `        this.${_.lowerFirst(refEntity)}RepositoryPort = ${_.lowerFirst(refEntity)}RepositoryPort;`),
@@ -454,56 +446,19 @@ function renderServiceReferenceMethods({ entityName, createM2oFields, updateM2oF
     const entityVar = _.lowerFirst(entityName);
     return `
     @Override
-    @Transactional
-    public ${entityName}DetailResponse create(${entityName}CreateRequest request) {
-        ResolvedRefs refs = validateAndResolveIds(request);
-        ${entityName} ${entityVar} = ${entityVar}DtoMapper.toCreateDomain(request);
-        applyCreateRefs(${entityVar}, refs);
-        ${entityName} saved = ${entityVar}RepositoryPort.save(${entityVar});
-        return ${entityVar}DtoMapper.toDetail(saved);
-    }
-
-    @Override
-    @Transactional
-    public ${entityName}DetailResponse update(Long id, ${entityName}UpdateRequest request) {
-        ResolvedRefs refs = validateAndResolveIds(request);
-        ${entityName} ${entityVar} = ${entityVar}RepositoryPort.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
-        ${entityVar}DtoMapper.updateDomain(request, ${entityVar});
-        applyUpdateRefs(${entityVar}, refs);
-        ${entityName} saved = ${entityVar}RepositoryPort.save(${entityVar});
-        return ${entityVar}DtoMapper.toDetail(saved);
-    }
-
-    private ResolvedRefs validateAndResolveIds(${entityName}CreateRequest request) {
+    protected void beforeCreate(${entityName} ${entityVar}, ${entityName}CreateRequest request) {
         BusinessException.Collector collector = new BusinessException.Collector();
 ${renderResolveAssignments(createM2oFields)}
         collector.validate();
-        return new ResolvedRefs(${renderResolvedConstructorArgs(allM2oFields, createM2oFields)});
-    }
-
-    private ResolvedRefs validateAndResolveIds(${entityName}UpdateRequest request) {
-        BusinessException.Collector collector = new BusinessException.Collector();
-${renderResolveAssignments(updateM2oFields)}
-        collector.validate();
-        return new ResolvedRefs(${renderResolvedConstructorArgs(allM2oFields, updateM2oFields)});
-    }
-
-    private void applyCreateRefs(${entityName} ${entityVar}, ResolvedRefs refs) {
 ${renderApplyRefs(entityVar, createM2oFields)}
     }
 
-    private void applyUpdateRefs(${entityName} ${entityVar}, ResolvedRefs refs) {
+    @Override
+    protected void beforeUpdate(${entityName} ${entityVar}, ${entityName}UpdateRequest request) {
+        BusinessException.Collector collector = new BusinessException.Collector();
+${renderResolveAssignments(updateM2oFields)}
+        collector.validate();
 ${renderApplyRefs(entityVar, updateM2oFields)}
-    }
-
-    private static class ResolvedRefs {
-${allM2oFields.map((field) => `        final ${field.refEntity} ${field.name};`).join('\n')}
-
-        ResolvedRefs(${allM2oFields.map((field) => `${field.refEntity} ${field.name}`).join(', ')}) {
-${allM2oFields.map((field) => `            this.${field.name} = ${field.name};`).join('\n')}
-        }
     }
 `;
 }
@@ -519,16 +474,11 @@ function renderResolveAssignments(fields) {
                 collector);`).join('\n');
 }
 
-function renderResolvedConstructorArgs(allFields, activeFields) {
-    const activeNames = new Set(activeFields.map((field) => field.name));
-    return allFields.map((field) => activeNames.has(field.name) ? field.name : 'null').join(', ');
-}
-
 function renderApplyRefs(entityVar, fields) {
     if (!fields.length) {
         return '';
     }
-    return fields.map((field) => `        ${entityVar}.set${_.upperFirst(field.name)}(refs.${field.name});`).join('\n');
+    return fields.map((field) => `        ${entityVar}.set${_.upperFirst(field.name)}(${field.name});`).join('\n');
 }
 
 function uniqueRefEntities(fields) {

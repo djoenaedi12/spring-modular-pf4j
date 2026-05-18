@@ -10,6 +10,7 @@ const { resolveCwd, assertProjectRoot, getPluginModules, detectPluginFromCwd } =
 const { validateEntityName, validateFieldName, validateEnumName } = require('../validators');
 const { generateResource } = require('../resource-generator');
 const { normalizeRenderedContent } = require('../template-engine');
+const { ensurePomDependencies } = require('../pom-registrar');
 
 /**
  * Field‐type choices shown in the interactive prompt.
@@ -32,6 +33,36 @@ const FIELD_TYPES = [
     { name: 'Instant', value: 'Instant' },
     { name: 'Enum', value: 'Enum' },
     { name: 'ManyToOne', value: 'ManyToOne' },
+];
+
+/**
+ * Dependencies required by generated resource components.
+ *
+ * These dependencies are marked as provided because the host/core application
+ * is expected to provide the runtime implementation. The plugin only needs
+ * them for compilation.
+ */
+const RESOURCE_REQUIRED_DEPENDENCIES = [
+    {
+        groupId: 'org.springframework.boot',
+        artifactId: 'spring-boot-starter-data-jpa',
+        scope: 'provided',
+    },
+    {
+        groupId: 'org.springframework.boot',
+        artifactId: 'spring-boot-starter-web',
+        scope: 'provided',
+    },
+    {
+        groupId: 'jakarta.validation',
+        artifactId: 'jakarta.validation-api',
+        scope: 'provided',
+    },
+    {
+        groupId: 'org.projectlombok',
+        artifactId: 'lombok',
+        scope: 'provided',
+    },
 ];
 
 const FIELD_TYPE_VALUES = new Set(FIELD_TYPES.map((t) => t.value));
@@ -947,7 +978,7 @@ function renderParentService({ packageName, parentEntityName, children }) {
     const createArgs = childShapes.map(({ fieldName }) => `request.get${_.upperFirst(fieldName)}()`).join(', ');
     const resolvedArgs = createArgs ? createArgs : '';
 
-    return `package ${packageName}.application.service;\n\n${imports}\n@Service\npublic class ${parentEntityName}ServiceImpl\n        extends BaseServiceImpl<${parentEntityName}, ${parentEntityName}CreateRequest, ${parentEntityName}UpdateRequest, ${parentEntityName}SummaryResponse, ${parentEntityName}DetailResponse>\n        implements ${parentEntityName}Service {\n\n${fields}\n${constructor}\n    @Override\n    protected String resourceType() {\n        return \"${parentEntityName}\";\n    }\n\n    @Override\n    @Transactional\n    public ${parentEntityName}DetailResponse create(${parentEntityName}CreateRequest request) {\n        ResolvedRefs refs = validateAndResolveIds(${resolvedArgs});\n        ${parentEntityName}DetailResponse response = super.create(request);\n        Long ${parentVar}Id = getIdFromResponse(response);\n        ${parentEntityName} ${parentVar} = ${parentVar}RepositoryPort.findById(${parentVar}Id).orElse(null);\n\n${childShapes.map(({ child, fieldName }) => `        save${child.entityName}s(request.get${_.upperFirst(fieldName)}(), ${parentVar}, refs);`).join('\n')}\n\n        return enrichDetail(response, ${parentVar}Id);\n    }\n\n    @Override\n    @Transactional\n    public ${parentEntityName}DetailResponse update(Long id, ${parentEntityName}UpdateRequest request) {\n        ResolvedRefs refs = validateAndResolveIds(${resolvedArgs});\n        ${parentEntityName}DetailResponse response = super.update(id, request);\n        ${parentEntityName} ${parentVar} = ${parentVar}RepositoryPort.findById(id).orElse(null);\n\n${childShapes.map(({ child }) => `        delete${child.entityName}s(id);`).join('\n')}\n${childShapes.map(({ child, fieldName }) => `        save${child.entityName}s(request.get${_.upperFirst(fieldName)}(), ${parentVar}, refs);`).join('\n')}\n\n        return enrichDetail(response, id);\n    }\n\n    @Override\n    public ${parentEntityName}DetailResponse findById(Long id) {\n        ${parentEntityName}DetailResponse response = super.findById(id);\n        return enrichDetail(response, id);\n    }\n\n${renderEnrichDetail({ parentEntityName, childShapes })}\n${childShapes.map(renderChildFindDeleteSaveMethods).join('\n')}\n${renderValidateAndResolve({ childShapes, targetFields })}\n${renderResolvedRefs(targetFields)}\n${renderGenericHelpers({ parentEntityName })}\n}\n`;
+    return `package ${packageName}.application.service;\n\n${imports}\n@Service\npublic class ${parentEntityName}ServiceImpl\n        extends BaseServiceImpl<${parentEntityName}, ${parentEntityName}CreateRequest, ${parentEntityName}UpdateRequest, ${parentEntityName}SummaryResponse, ${parentEntityName}DetailResponse>\n        implements ${parentEntityName}Service {\n\n${fields}\n    private final ThreadLocal<ResolvedRefs> currentRefs = new ThreadLocal<>();\n\n${constructor}\n    @Override\n    protected String resourceType() {\n        return \"${parentEntityName}\";\n    }\n\n    @Override\n    protected void beforeCreate(${parentEntityName} ${parentVar}, ${parentEntityName}CreateRequest request) {\n        currentRefs.set(validateAndResolveIds(${resolvedArgs}));\n    }\n\n    @Override\n    protected void afterCreate(${parentEntityName} ${parentVar}, ${parentEntityName}CreateRequest request) {\n        ResolvedRefs refs = currentRefs.get();\n        currentRefs.remove();\n${childShapes.map(({ child, fieldName }) => `        save${child.entityName}s(request.get${_.upperFirst(fieldName)}(), ${parentVar}, refs);`).join('\n')}\n    }\n\n    @Override\n    protected void beforeUpdate(${parentEntityName} ${parentVar}, ${parentEntityName}UpdateRequest request) {\n        currentRefs.set(validateAndResolveIds(${resolvedArgs}));\n    }\n\n    @Override\n    protected void afterUpdate(${parentEntityName} ${parentVar}, ${parentEntityName}UpdateRequest request) {\n        ResolvedRefs refs = currentRefs.get();\n        currentRefs.remove();\n${childShapes.map(({ child }) => `        delete${child.entityName}s(${parentVar}.getId());`).join('\n')}\n${childShapes.map(({ child, fieldName }) => `        save${child.entityName}s(request.get${_.upperFirst(fieldName)}(), ${parentVar}, refs);`).join('\n')}\n    }\n\n    @Override\n    protected void beforeDelete(Long id) {\n${childShapes.map(({ child }) => `        delete${child.entityName}s(id);`).join('\n')}\n    }\n\n    @Override\n    protected ${parentEntityName}DetailResponse enrichDetail(${parentEntityName}DetailResponse response) {\n        Long ${parentVar}Id = idEncoder.decode(response.getId());\n${childShapes.map(({ child, fieldName }) => `        response.set${_.upperFirst(fieldName)}(to${child.entityName}Responses(find${child.entityName}s(${parentVar}Id)));`).join('\n')}\n        return response;\n    }\n\n${childShapes.map(renderChildFindDeleteSaveMethods).join('\n')}\n${renderValidateAndResolve({ childShapes, targetFields })}\n${renderResolvedRefs(targetFields)}\n${renderGenericHelpers({ parentEntityName })}\n}\n`;
 }
 
 function renderParentServiceImports({ packageName, parentEntityName, childShapes, targetFields }) {
@@ -960,7 +991,6 @@ function renderParentServiceImports({ packageName, parentEntityName, childShapes
         'java.util.stream.Collectors',
         'org.springframework.data.jpa.domain.Specification',
         'org.springframework.stereotype.Service',
-        'org.springframework.transaction.annotation.Transactional',
         `${packageName}.application.dto.${parentEntityName}CreateRequest`,
         `${packageName}.application.dto.${parentEntityName}DetailResponse`,
         `${packageName}.application.dto.${parentEntityName}SummaryResponse`,
@@ -1011,11 +1041,7 @@ function renderParentServiceImports({ packageName, parentEntityName, childShapes
 }
 
 function renderParentServiceFields({ parentEntityName, childShapes, targetFields }) {
-    const parentVar = _.lowerFirst(parentEntityName);
-    const lines = [
-        `    private final ${parentEntityName}RepositoryPort ${parentVar}RepositoryPort;`,
-        `    private final ${parentEntityName}DtoMapper ${parentVar}DtoMapper;`,
-    ];
+    const lines = [];
     for (const { child } of childShapes) {
         const childVar = _.lowerFirst(child.entityName);
         lines.push(`    private final ${child.entityName}EntityRepository ${childVar}EntityRepository;`);
@@ -1040,8 +1066,6 @@ function renderParentServiceConstructor({ parentEntityName, parentVar, childShap
         ...targetFields.map((field) => `${field.refEntity}RepositoryPort ${_.lowerFirst(field.refEntity)}RepositoryPort`),
     ];
     const assignments = [
-        `        this.${parentVar}RepositoryPort = repositoryPort;`,
-        `        this.${parentVar}DtoMapper = dtoMapper;`,
         ...childShapes.flatMap(({ child }) => {
             const childVar = _.lowerFirst(child.entityName);
             return [
@@ -1053,16 +1077,6 @@ function renderParentServiceConstructor({ parentEntityName, parentVar, childShap
     ];
 
     return `    public ${parentEntityName}ServiceImpl(${params.join(',\n            ')}) {\n        super(repositoryPort, dtoMapper, messageUtil, idEncoder);\n${assignments.join('\n')}\n    }\n\n`;
-}
-
-function renderEnrichDetail({ parentEntityName, childShapes }) {
-    const lines = [
-        `    private ${parentEntityName}DetailResponse enrichDetail(${parentEntityName}DetailResponse response, Long ${_.lowerFirst(parentEntityName)}Id) {`,
-        ...childShapes.map(({ child, fieldName }) => `        response.set${_.upperFirst(fieldName)}(to${child.entityName}Responses(find${child.entityName}s(${_.lowerFirst(parentEntityName)}Id)));`),
-        '        return response;',
-        '    }',
-    ];
-    return lines.join('\n') + '\n\n';
 }
 
 function renderChildFindDeleteSaveMethods({ child, shape, fieldName, parentFieldName }) {
@@ -1123,7 +1137,7 @@ function renderResolvedRefs(targetFields) {
 
 function renderGenericHelpers({ parentEntityName }) {
     const parentFieldName = _.lowerFirst(parentEntityName);
-    return `    private SimpleFilter parentFilter(Long ${parentFieldName}Id) {\n        return SimpleFilter.builder()\n                .field(\"${parentFieldName}.id\")\n                .operator(SimpleFilter.FilterOperator.EQUALS)\n                .value(${parentFieldName}Id)\n                .build();\n    }\n\n    private <T extends BaseModel> Map<Long, T> batchFetch(BaseRepositoryPort<T> port, Set<Long> ids) {\n        if (ids.isEmpty()) {\n            return Collections.emptyMap();\n        }\n        SimpleFilter inFilter = SimpleFilter.builder()\n                .field(\"id\")\n                .operator(SimpleFilter.FilterOperator.IN)\n                .value(ids)\n                .build();\n        List<T> results = port.findAll(inFilter, Collections.<SortOrder>emptyList());\n        return results.stream()\n                .collect(Collectors.toMap(BaseModel::getId, Function.identity()));\n    }\n\n    private <T> void collectMissing(Set<Long> requestedIds, Map<Long, T> foundMap,\n            String fieldName, BusinessException.Collector collector) {\n        requestedIds.stream()\n                .filter(id -> !foundMap.containsKey(id))\n                .map(idEncoder::encode)\n                .forEach(encodedId -> collector.add(\"Invalid \" + fieldName + \": \" + encodedId));\n    }\n\n    private Long getIdFromResponse(${parentEntityName}DetailResponse response) {\n        return idEncoder.decode(response.getId());\n    }\n`;
+    return `    private SimpleFilter parentFilter(Long ${parentFieldName}Id) {\n        return SimpleFilter.builder()\n                .field(\"${parentFieldName}.id\")\n                .operator(SimpleFilter.FilterOperator.EQUALS)\n                .value(${parentFieldName}Id)\n                .build();\n    }\n\n    private <T extends BaseModel> Map<Long, T> batchFetch(BaseRepositoryPort<T> port, Set<Long> ids) {\n        if (ids.isEmpty()) {\n            return Collections.emptyMap();\n        }\n        SimpleFilter inFilter = SimpleFilter.builder()\n                .field(\"id\")\n                .operator(SimpleFilter.FilterOperator.IN)\n                .value(ids)\n                .build();\n        List<T> results = port.findAll(inFilter, Collections.<SortOrder>emptyList());\n        return results.stream()\n                .collect(Collectors.toMap(BaseModel::getId, Function.identity()));\n    }\n\n    private <T> void collectMissing(Set<Long> requestedIds, Map<Long, T> foundMap,\n            String fieldName, BusinessException.Collector collector) {\n        requestedIds.stream()\n                .filter(id -> !foundMap.containsKey(id))\n                .map(idEncoder::encode)\n                .forEach(encodedId -> collector.add(\"Invalid \" + fieldName + \": \" + encodedId));\n    }\n`;
 }
 
 function uniqueTargetFields(children) {
@@ -1366,6 +1380,16 @@ async function resourceCreate(entityName, opts) {
 
     try {
         const allGeneratedFiles = [];
+
+        const pluginPomPath = path.join(pluginDir, 'pom.xml');
+        const pomUpdated = await ensurePomDependencies(
+            pluginPomPath,
+            RESOURCE_REQUIRED_DEPENDENCIES
+        );
+
+        if (pomUpdated) {
+            allGeneratedFiles.push(pluginPomPath);
+        }
 
         for (const resource of resourceSpecs) {
             const tableName = buildTableName(pluginPrefix, resource.entityName);

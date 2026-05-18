@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import gasi.gps.core.api.application.exception.BusinessException;
-import gasi.gps.core.api.file.FileReadCommand;
+import gasi.gps.core.api.file.FileReadInput;
 import gasi.gps.core.api.file.FileReader;
 import gasi.gps.core.api.file.FileReaderRegistry;
 import gasi.gps.core.api.file.FileRow;
@@ -38,7 +38,7 @@ public class DefaultFileReaderRegistry implements FileReaderRegistry {
     }
 
     @Override
-    public FileReader get(FileReadCommand command) {
+    public FileReader get(FileReadInput command) {
         String extension = command == null ? "" : command.extension();
         FileReader reader = readers.get(normalize(extension));
         if (reader == null) {
@@ -48,7 +48,7 @@ public class DefaultFileReaderRegistry implements FileReaderRegistry {
     }
 
     @Override
-    public List<FileRow> read(FileReadCommand command) {
+    public List<FileRow> read(FileReadInput command) {
         return get(command).read(command);
     }
 

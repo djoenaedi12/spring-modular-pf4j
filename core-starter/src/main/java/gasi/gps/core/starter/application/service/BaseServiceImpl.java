@@ -13,10 +13,12 @@ import gasi.gps.core.starter.infrastructure.util.IdEncoder;
 /**
  * Generic transactional implementation of {@link BaseService}.
  *
- * <p>This implementation builds on {@link BaseReadServiceImpl} for query
+ * <p>
+ * This implementation builds on {@link BaseReadServiceImpl} for query
  * operations, then adds create, update, and delete behavior for full CRUD
  * resources. Subclasses supply concrete repository and mapper implementations,
- * then override validation hooks for resource-specific business rules.</p>
+ * then override validation hooks for resource-specific business rules.
+ * </p>
  *
  * @param <D>   domain model type
  * @param <CRQ> create request DTO
@@ -51,10 +53,11 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
 
     @Override
     public DRS create(CRQ request) {
-        validateCreate(request);
         D domain = mapper.toCreateDomain(request);
+        beforeCreate(domain, request);
         D saved = repositoryPort.save(domain);
-        return mapper.toDetail(saved);
+        afterCreate(saved, request);
+        return toDetailResponse(saved);
     }
 
     @Override
@@ -62,10 +65,11 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
         D existing = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
-        validateUpdate(id, request);
         mapper.updateDomain(request, existing);
+        beforeUpdate(existing, request);
         D saved = repositoryPort.save(existing);
-        return mapper.toDetail(saved);
+        afterUpdate(saved, request);
+        return toDetailResponse(saved);
     }
 
     @Override
@@ -73,32 +77,56 @@ public abstract class BaseServiceImpl<D extends BaseModel, CRQ, URQ, SRS, DRS>
         repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
-        validateDelete(id);
+        beforeDelete(id);
         repositoryPort.delete(id);
     }
 
     /**
-     * Hook for create request validation.
+     * Called after create DTO is mapped to domain, before save.
+     * Use this to resolve and validate references, then apply them.
      *
-     * @param request create request DTO
+     * @param domain  the newly mapped domain object
+     * @param request the original create request
      */
-    protected void validateCreate(CRQ request) {
+    protected void beforeCreate(D domain, CRQ request) {
     }
 
     /**
-     * Hook for update request validation.
+     * Called after the entity is saved on create.
+     * Use this to save child collections.
      *
-     * @param id      internal database identifier
-     * @param request update request DTO
+     * @param saved   the persisted domain object
+     * @param request the original create request
      */
-    protected void validateUpdate(Long id, URQ request) {
+    protected void afterCreate(D saved, CRQ request) {
     }
 
     /**
-     * Hook for delete validation.
+     * Called after update DTO is merged into existing domain, before save.
+     * Use this to resolve and validate references, then apply them.
+     *
+     * @param domain  the existing domain object with updates applied
+     * @param request the original update request
+     */
+    protected void beforeUpdate(D domain, URQ request) {
+    }
+
+    /**
+     * Called after the entity is saved on update.
+     * Use this to delete and re-save child collections.
+     *
+     * @param saved   the persisted domain object
+     * @param request the original update request
+     */
+    protected void afterUpdate(D saved, URQ request) {
+    }
+
+    /**
+     * Called before the entity is deleted.
+     * Use this to cascade-delete child entities.
      *
      * @param id internal database identifier
      */
-    protected void validateDelete(Long id) {
+    protected void beforeDelete(Long id) {
     }
 }

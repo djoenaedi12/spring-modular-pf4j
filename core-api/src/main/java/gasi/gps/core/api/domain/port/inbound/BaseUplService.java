@@ -1,23 +1,26 @@
 package gasi.gps.core.api.domain.port.inbound;
 
 import java.util.List;
+import java.util.Map;
 
 import gasi.gps.core.api.application.dto.DataRowUplDetailResponse;
 import gasi.gps.core.api.application.dto.DataRowUplSummaryResponse;
 import gasi.gps.core.api.application.dto.DataUplDetailResponse;
 import gasi.gps.core.api.application.dto.DataUplSummaryResponse;
-import gasi.gps.core.api.domain.model.DataUplCommand;
 import gasi.gps.core.api.domain.model.GenericFilter;
 import gasi.gps.core.api.domain.model.PageResult;
 import gasi.gps.core.api.domain.model.SortOrder;
+import gasi.gps.core.api.file.FileReadInput;
 
 /**
  * Inbound service contract for shared data upload workflows.
  *
- * <p>Upload metadata and rows are stored in shared upload tables. The
+ * <p>
+ * Upload metadata and rows are stored in shared upload tables. The
  * {@code resource} parameter scopes every operation to the business resource
  * being uploaded, while resource-specific parsing, validation, and commit
- * behavior is delegated to upload processors.</p>
+ * behavior is delegated to upload processors.
+ * </p>
  *
  * @since 1.0.0
  */
@@ -27,10 +30,10 @@ public interface BaseUplService extends BaseReadService<DataUplSummaryResponse, 
      * Uploads a file for the given resource.
      *
      * @param resource resource code from the API path
-     * @param file     uploaded file command
+     * @param file     uploaded file input
      * @return detail response for the created upload
      */
-    DataUplDetailResponse upload(String resource, DataUplCommand file);
+    DataUplDetailResponse upload(String resource, FileReadInput file);
 
     /**
      * Finds an upload scoped by resource.
@@ -59,16 +62,18 @@ public interface BaseUplService extends BaseReadService<DataUplSummaryResponse, 
      *
      * @param resource resource code from the API path
      * @param id       encoded upload identifier
+     * @param params   validation parameters
      */
-    void validate(String resource, String id);
+    void validate(String resource, String id, Map<String, String> params);
 
     /**
      * Commits all valid rows for an upload.
      *
      * @param resource resource code from the API path
      * @param id       encoded upload identifier
+     * @param params   commit parameters
      */
-    void commit(String resource, String id);
+    void commit(String resource, String id, Map<String, String> params);
 
     /**
      * Finds one upload row scoped by resource and upload.

@@ -16,7 +16,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Component;
 
 import gasi.gps.core.api.application.exception.BusinessException;
-import gasi.gps.core.api.file.FileReadCommand;
+import gasi.gps.core.api.file.FileReadInput;
 import gasi.gps.core.api.file.FileReader;
 import gasi.gps.core.api.file.FileRow;
 
@@ -34,7 +34,7 @@ public class CsvFileReader implements FileReader {
     }
 
     @Override
-    public List<FileRow> read(FileReadCommand command) {
+    public List<FileRow> read(FileReadInput command) {
         if (command == null || command.inputStream() == null) {
             throw new BusinessException("File is required");
         }

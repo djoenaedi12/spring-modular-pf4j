@@ -15,7 +15,7 @@ public interface FileReaderRegistry {
      * @param command file read command
      * @return matching reader
      */
-    FileReader get(FileReadCommand command);
+    FileReader get(FileReadInput command);
 
     /**
      * Reads a file using the matching reader.
@@ -23,5 +23,5 @@ public interface FileReaderRegistry {
      * @param command file read command
      * @return parsed rows
      */
-    List<FileRow> read(FileReadCommand command);
+    List<FileRow> read(FileReadInput command);
 }

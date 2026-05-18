@@ -8,7 +8,7 @@ import java.util.Map;
  *
  * @since 1.0.0
  */
-public interface FileReadCommand {
+public interface FileReadInput {
 
     /**
      * Original source filename.

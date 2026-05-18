@@ -6,8 +6,10 @@ import java.util.Set;
 /**
  * Reader for one or more file formats.
  *
- * <p>Implementations declare supported extensions. The shared registry selects
- * the reader automatically from {@link FileReadCommand#extension()}.</p>
+ * <p>
+ * Implementations declare supported extensions. The shared registry selects
+ * the reader automatically from {@link FileReadInput#extension()}.
+ * </p>
  *
  * @since 1.0.0
  */
@@ -26,5 +28,5 @@ public interface FileReader {
      * @param command file read command
      * @return parsed rows
      */
-    List<FileRow> read(FileReadCommand command);
+    List<FileRow> read(FileReadInput command);
 }

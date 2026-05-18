@@ -18,11 +18,6 @@ public class {{EXTENSION_CLASS_NAME}} implements AppExtension {
     }
 
     @Override
-    public String getModulePrefix() {
-        return "{{PLUGIN_PREFIX}}";
-    }
-
-    @Override
     public String getModuleDescription() {
         return "{{PLUGIN_DESCRIPTION}}";
     }

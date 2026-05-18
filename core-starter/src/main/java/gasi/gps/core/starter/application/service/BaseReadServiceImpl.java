@@ -19,9 +19,11 @@ import gasi.gps.core.starter.infrastructure.util.IdEncoder;
 /**
  * Generic transactional implementation of {@link BaseReadService}.
  *
- * <p>Subclasses supply concrete repository and read mapper implementations,
+ * <p>
+ * Subclasses supply concrete repository and read mapper implementations,
  * then override {@link #resourceType()} for resource-specific error
- * messages.</p>
+ * messages.
+ * </p>
  *
  * @param <D>   domain model type
  * @param <SRS> summary response DTO type
@@ -67,7 +69,7 @@ public abstract class BaseReadServiceImpl<D extends BaseModel, SRS, DRS>
         D domain = repositoryPort.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), idEncoder.encode(id))));
-        return mapper.toDetail(domain);
+        return enrichDetail(mapper.toDetail(domain));
     }
 
     @Override
@@ -75,7 +77,7 @@ public abstract class BaseReadServiceImpl<D extends BaseModel, SRS, DRS>
         D domain = repositoryPort.findBy(filter)
                 .orElseThrow(() -> new EntityNotFoundException(
                         messageUtil.get("error.entity.notFound", resourceType(), "filter")));
-        return mapper.toDetail(domain);
+        return enrichDetail(mapper.toDetail(domain));
     }
 
     @Override
@@ -108,5 +110,27 @@ public abstract class BaseReadServiceImpl<D extends BaseModel, SRS, DRS>
      */
     protected String resourceType() {
         return "Entity";
+    }
+
+    /**
+     * Enrich a detail response with additional data (child lists, computed fields).
+     * Called on create, update, and findById.
+     *
+     * @param response the detail response to enrich
+     * @return the enriched response
+     */
+    protected DRS enrichDetail(DRS response) {
+        return response;
+    }
+
+    /**
+     * Convert saved domain to detail response, then enrich.
+     *
+     * @param saved the persisted domain object
+     * @return the enriched detail response
+     */
+    protected DRS toDetailResponse(D saved) {
+        DRS response = mapper.toDetail(saved);
+        return enrichDetail(response);
     }
 }
