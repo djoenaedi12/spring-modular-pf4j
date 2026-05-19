@@ -72,8 +72,8 @@ cd gasi-cli && npm install && npm link
 gasi plugin build auth
 gasi plugin deploy auth
 
-# Jalankan aplikasi
-cd platform-app && mvn spring-boot:run
+# Jalankan aplikasi dari root project agar dependency module ikut ter-compile
+mvn -pl platform-app -am spring-boot:run
 ```
 
 Sesuaikan datasource, `app.id.salt`, dan CORS di [platform-app/src/main/resources/application.properties](platform-app/src/main/resources/application.properties) sebelum menjalankan.

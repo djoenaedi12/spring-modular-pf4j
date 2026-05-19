@@ -26,5 +26,5 @@ public abstract class BaseDetailResponse extends BaseSummaryResponse {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
-    private Long version;
+    private Integer version;
 }

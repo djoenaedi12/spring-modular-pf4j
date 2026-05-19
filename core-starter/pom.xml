@@ -62,7 +62,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>

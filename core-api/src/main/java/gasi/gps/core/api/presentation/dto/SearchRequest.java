@@ -31,7 +31,8 @@ import lombok.NoArgsConstructor;
  * },
  * "sorts": [
  * { "field": "createdAt", "direction": "DESC" }
- * ]
+ * ],
+ * "fields": ["id", "code", "name"]
  * }
  * }</pre>
  *
@@ -44,6 +45,13 @@ import lombok.NoArgsConstructor;
 public class SearchRequest {
     private GenericFilter filter;
     private List<SortOrder> sorts;
+    /**
+     * Optional response projection for search list/page endpoints.
+     *
+     * <p>When provided, only these public DTO fields are returned. Controllers
+     * may force required fields such as {@code id} to remain present.</p>
+     */
+    private List<String> fields;
     @Default
     private Integer page = 0;
     @Default

@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
@@ -34,15 +35,16 @@ import gasi.gps.core.api.security.SecurityContextProvider;
 @EnableJpaAuditing
 public class JpaAuditingConfig {
 
-    private final SecurityContextProvider securityContextUtil;
+    private final ObjectProvider<SecurityContextProvider> securityContextProvider;
 
-    public JpaAuditingConfig(SecurityContextProvider securityContextUtil) {
-        this.securityContextUtil = securityContextUtil;
+    public JpaAuditingConfig(ObjectProvider<SecurityContextProvider> securityContextProvider) {
+        this.securityContextProvider = securityContextProvider;
     }
 
     @Bean
     public AuditorAware<String> auditorAware() {
-        return () -> Optional.ofNullable(securityContextUtil.getCurrentUsername())
+        return () -> Optional.ofNullable(securityContextProvider.getIfAvailable())
+                .map(SecurityContextProvider::getCurrentUsername)
                 .or(() -> Optional.of("system"));
     }
 }

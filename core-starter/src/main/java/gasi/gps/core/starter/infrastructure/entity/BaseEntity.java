@@ -10,6 +10,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,10 +19,10 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+import gasi.gps.core.api.domain.model.LifecycleStatus;
 import gasi.gps.core.starter.infrastructure.filter.Filterable;
 
 /**
@@ -66,11 +68,11 @@ public abstract class BaseEntity {
     @Column(name = "source_id")
     private Long sourceId;
 
-    @Column(name = "lifecycle_status", length = 20)
-    private String lifecycleStatus;
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "lifecycle_status")
+    private LifecycleStatus lifecycleStatus;
 
     @Version
-    @Builder.Default
-    @Column(name = "version", columnDefinition = "bigint default 0", nullable = false)
-    private Long version = 0L;
+    @Column(name = "version")
+    private Integer version;
 }

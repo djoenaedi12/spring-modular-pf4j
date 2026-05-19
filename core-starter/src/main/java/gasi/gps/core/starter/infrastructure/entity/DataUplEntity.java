@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "data_upls")
+@SequenceGenerator(name = "global_seq", sequenceName = "uploader_seq", allocationSize = 50)
 public class DataUplEntity extends BaseEntity {
 
     @Column(name = "resource", nullable = false, length = 255)

@@ -13,6 +13,7 @@ import gasi.gps.core.api.domain.model.PageResult;
 import gasi.gps.core.api.domain.port.inbound.BaseReadService;
 import gasi.gps.core.api.presentation.dto.ApiResponse;
 import gasi.gps.core.api.presentation.dto.SearchRequest;
+import gasi.gps.core.starter.presentation.support.ResponseProjection;
 import gasi.gps.core.starter.infrastructure.util.IdEncoder;
 
 /**
@@ -102,6 +103,25 @@ public abstract class BaseReadController<SRS, DRS> {
     }
 
     /**
+     * Default response projection for search list/page when callers omit fields.
+     *
+     * <p>Subclasses should override this with resource-specific default table
+     * columns. The fallback keeps only {@code id} to avoid accidentally exposing
+     * a full summary DTO on unprojected requests.</p>
+     *
+     * @return default public DTO field names
+     */
+    protected List<String> getDefaultSummaryFields() {
+        return List.of("id");
+    }
+
+    private List<String> resolveProjectionFields(SearchRequest request) {
+        return request.getFields() == null || request.getFields().isEmpty()
+                ? getDefaultSummaryFields()
+                : request.getFields();
+    }
+
+    /**
      * Retrieves a resource by its identifier.
      *
      * @param id the resource identifier
@@ -133,11 +153,11 @@ public abstract class BaseReadController<SRS, DRS> {
      */
     @PostMapping("/search/list")
     @PreAuthorize("hasPermission(this, 'READ')")
-    public ApiResponse<List<SRS>> findAll(@RequestBody SearchRequest request) {
+    public ApiResponse<List<?>> findAll(@RequestBody SearchRequest request) {
         List<SRS> result = service.findAll(
                 request.getFilter(),
                 request.getSorts() != null ? request.getSorts() : Collections.emptyList());
-        return ApiResponse.ok(result);
+        return ApiResponse.ok(ResponseProjection.projectList(result, resolveProjectionFields(request)));
     }
 
     /**
@@ -148,13 +168,13 @@ public abstract class BaseReadController<SRS, DRS> {
      */
     @PostMapping("/search/page")
     @PreAuthorize("hasPermission(this, 'READ')")
-    public ApiResponse<PageResult<SRS>> findAllPaged(
+    public ApiResponse<PageResult<?>> findAllPaged(
             @RequestBody SearchRequest request) {
         PageResult<SRS> result = service.findAll(
                 request.getPage() != null ? request.getPage() : 0,
                 request.getSize() != null ? request.getSize() : 10,
                 request.getFilter(),
                 request.getSorts() != null ? request.getSorts() : Collections.emptyList());
-        return ApiResponse.ok(result);
+        return ApiResponse.ok(ResponseProjection.projectPage(result, resolveProjectionFields(request)));
     }
 }
