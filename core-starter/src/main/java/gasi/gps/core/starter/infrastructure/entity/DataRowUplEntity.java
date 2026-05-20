@@ -10,7 +10,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,7 +24,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "data_row_upls")
-@SequenceGenerator(name = "global_seq", sequenceName = "uploader_seq", allocationSize = 50)
 public class DataRowUplEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

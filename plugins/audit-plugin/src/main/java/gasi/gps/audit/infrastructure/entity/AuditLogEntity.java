@@ -18,7 +18,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "audit_logs")
-@SequenceGenerator(name = "global_seq", sequenceName = "audit_log_seq", allocationSize = 50)
 public class AuditLogEntity extends BaseEntity {
 
     @Column(name = "trace_id")
