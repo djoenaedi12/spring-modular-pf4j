@@ -55,6 +55,26 @@ public interface DataUplProcessor {
     List<DataRowUpl> validateRows(DataUpl dataUpl, List<DataRowUpl> rows, Map<String, String> params);
 
     /**
+     * Determines whether committing this upload should be routed to an external
+     * approval flow instead of immediately writing to the target resource.
+     *
+     * <p>
+     * The shared upload service only marks the upload as pending approval. The
+     * approval request and post-approval commit are owned by the caller's
+     * approval workflow.
+     * </p>
+     *
+     * @param dataUpl upload header
+     * @param rows    valid rows that would be committed
+     * @param params  additional parameters for committing, e.g. from the API
+     *                request
+     * @return {@code true} when commit must wait for external approval
+     */
+    default boolean requiresApproval(DataUpl dataUpl, List<DataRowUpl> rows, Map<String, String> params) {
+        return false;
+    }
+
+    /**
      * Commits valid rows to the target resource.
      *
      * @param dataUpl upload header

@@ -89,7 +89,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
         String field = FilterableFieldResolver.resolve(root.getJavaType(), sf.getField());
         Path<?> path = resolvePath(root, field);
-        Object value = sf.getValue();
+        Object value = coerceValue(path, sf.getValue());
 
         return switch (sf.getOperator()) {
             case EQUALS -> cb.equal(path, value);
@@ -103,6 +103,36 @@ public class GenericSpecification<T> implements Specification<T> {
             case IS_NULL -> cb.isNull(path);
             case IS_NOT_NULL -> cb.isNotNull(path);
         };
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private Object coerceValue(Path<?> path, Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        Class<?> javaType = path.getJavaType();
+        if (!javaType.isEnum()) {
+            return value;
+        }
+
+        if (javaType.isInstance(value)) {
+            return value;
+        }
+
+        if (value instanceof String text) {
+            return Enum.valueOf((Class<? extends Enum>) javaType.asSubclass(Enum.class), text);
+        }
+
+        if (value instanceof Number number) {
+            Object[] constants = javaType.getEnumConstants();
+            int ordinal = number.intValue();
+            if (ordinal >= 0 && ordinal < constants.length) {
+                return constants[ordinal];
+            }
+        }
+
+        return value;
     }
 
     private Path<?> resolvePath(Root<T> root, String field) {

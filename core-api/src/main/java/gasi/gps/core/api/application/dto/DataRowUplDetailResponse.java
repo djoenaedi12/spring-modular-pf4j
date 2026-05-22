@@ -18,9 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class DataRowUplDetailResponse extends BaseDetailResponse {
     private int rowNumber;
     private String rowData;
-    private String lookupValue1;
-    private String lookupValue2;
-    private String lookupValue3;
     private UploadRowStatus rowStatus;
+    private String identifier;
     private String errorMessage;
 }

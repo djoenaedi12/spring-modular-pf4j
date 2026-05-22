@@ -49,6 +49,12 @@ public abstract class BaseUplServiceImpl
         extends BaseReadServiceImpl<DataUpl, DataUplSummaryResponse, DataUplDetailResponse>
         implements BaseUplService {
 
+    private static final List<UploadStatus> DISCARDABLE_STATUSES = List.of(
+            UploadStatus.UPLOADED,
+            UploadStatus.VALIDATED,
+            UploadStatus.FAILED,
+            UploadStatus.REJECTED);
+
     private final DataUplRepositoryPort dataUplRepositoryPort;
     private final DataRowUplRepositoryPort dataRowUplRepositoryPort;
     private final DataUplDtoMapper dataUplDtoMapper;
@@ -145,6 +151,12 @@ public abstract class BaseUplServiceImpl
                 .filter(row -> row.getRowStatus() == UploadRowStatus.VALID)
                 .toList();
 
+        if (processor.requiresApproval(dataUpl, validRows, params)) {
+            dataUpl.setUploadStatus(UploadStatus.PENDING_APPROVAL);
+            dataUplRepositoryPort.save(dataUpl);
+            return;
+        }
+
         dataUpl.setUploadStatus(UploadStatus.COMMITTING);
         dataUplRepositoryPort.save(dataUpl);
 
@@ -155,6 +167,18 @@ public abstract class BaseUplServiceImpl
         dataUpl.setCommittedRows(validRows.size());
         dataUpl.setUploadStatus(UploadStatus.COMMITTED);
         dataUplRepositoryPort.save(dataUpl);
+    }
+
+    @Override
+    public void discard(String resource, String id) {
+        DataUpl dataUpl = findUpload(resource, id);
+
+        if (!DISCARDABLE_STATUSES.contains(dataUpl.getUploadStatus())) {
+            throw new BusinessException("Upload cannot be discarded in status: " + dataUpl.getUploadStatus());
+        }
+
+        dataRowUplRepositoryPort.deleteAllBy(rowFilter(dataUpl, null));
+        dataUplRepositoryPort.delete(dataUpl.getId());
     }
 
     @Override
@@ -234,9 +258,9 @@ public abstract class BaseUplServiceImpl
 
     private GenericFilter rowFilter(DataUpl dataUpl, GenericFilter filter) {
         SimpleFilter uploadFilter = SimpleFilter.builder()
-                .field("dataUpl")
+                .field("dataUpl.id")
                 .operator(SimpleFilter.FilterOperator.EQUALS)
-                .value(dataUpl)
+                .value(dataUpl.getId())
                 .build();
         if (filter == null) {
             return uploadFilter;

@@ -6,6 +6,8 @@ public enum UploadStatus {
     VALIDATING,
     VALIDATED,
     COMMITTING,
+    PENDING_APPROVAL,
     COMMITTED,
+    REJECTED,
     FAILED,
 }

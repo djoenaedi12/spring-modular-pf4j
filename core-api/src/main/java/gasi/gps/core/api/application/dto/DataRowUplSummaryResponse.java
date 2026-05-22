@@ -18,4 +18,5 @@ import lombok.experimental.SuperBuilder;
 public class DataRowUplSummaryResponse extends BaseSummaryResponse {
     private int rowNumber;
     private UploadRowStatus rowStatus;
+    private String identifier;
 }

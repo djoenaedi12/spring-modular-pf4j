@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -135,6 +136,23 @@ public abstract class BaseUplController {
             @PathVariable String id,
             @RequestParam Map<String, String> parameters) {
         service.commit(resource, id, parameters);
+        return ApiResponse.noContent();
+    }
+
+    /**
+     * Discards an upload attempt that has not been committed or entered a
+     * protected processing state.
+     *
+     * @param resource resource code
+     * @param id       encoded upload identifier
+     * @return empty success response
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasPermission(this, 'DELETE')")
+    public ApiResponse<Void> discard(
+            @PathVariable String resource,
+            @PathVariable String id) {
+        service.discard(resource, id);
         return ApiResponse.noContent();
     }
 

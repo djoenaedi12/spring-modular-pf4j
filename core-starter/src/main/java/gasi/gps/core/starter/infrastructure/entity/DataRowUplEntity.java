@@ -30,11 +30,19 @@ public class DataRowUplEntity extends BaseEntity {
     @JoinColumn(name = "data_upl_id", nullable = false)
     @Filterable
     private DataUplEntity dataUpl;
+    @Filterable
     @Column(name = "row_number", nullable = false)
     private int rowNumber;
     @Lob
     @Column(name = "row_data")
     private String rowData;
+    @Column(name = "row_status", nullable = false)
+    @Enumerated(EnumType.ORDINAL)
+    @Filterable
+    private UploadRowStatus rowStatus;
+    @Filterable
+    @Column(name = "identifier", length = 255)
+    private String identifier;
     @Filterable
     @Column(name = "lookup_value1", length = 255)
     private String lookupValue1;
@@ -44,9 +52,7 @@ public class DataRowUplEntity extends BaseEntity {
     @Filterable
     @Column(name = "lookup_value3", length = 255)
     private String lookupValue3;
-    @Column(name = "row_status", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private UploadRowStatus rowStatus;
-    @Column(name = "error_message", length = 255)
+    @Lob
+    @Column(name = "error_message")
     private String errorMessage;
 }

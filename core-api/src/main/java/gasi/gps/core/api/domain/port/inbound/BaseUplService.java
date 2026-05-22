@@ -76,6 +76,15 @@ public interface BaseUplService extends BaseReadService<DataUplSummaryResponse, 
     void commit(String resource, String id, Map<String, String> params);
 
     /**
+     * Discards an upload attempt that has not reached a protected processing or
+     * committed state.
+     *
+     * @param resource resource code from the API path
+     * @param id       encoded upload identifier
+     */
+    void discard(String resource, String id);
+
+    /**
      * Finds one upload row scoped by resource and upload.
      *
      * @param resource resource code from the API path
