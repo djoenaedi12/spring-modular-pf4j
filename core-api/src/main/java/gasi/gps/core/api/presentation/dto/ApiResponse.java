@@ -3,6 +3,7 @@ package gasi.gps.core.api.presentation.dto;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,11 @@ import lombok.NoArgsConstructor;
  * {
  * "success": false,
  * "message": "Validation failed",
- * "errors": ["Name is required", "Email is invalid"],
+ * "errors": ["Business rule violation"],
+ * "fieldErrors": {
+ *   "name": ["Name is required"],
+ *   "email": ["Email is invalid"]
+ * },
  * "timestamp": "2026-03-03T10:15:30Z"
  * }
  * }</pre>
@@ -47,6 +52,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private List<String> errors;
+    private Map<String, List<String>> fieldErrors;
 
     @Builder.Default
     private Instant timestamp = Instant.now();
@@ -126,6 +132,24 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .errors(Collections.unmodifiableList(errors))
+                .build();
+    }
+
+    /**
+     * Creates an error response with field-specific validation messages.
+     *
+     * @param code        status or application error code reserved for callers that
+     *                    map envelopes to transport responses
+     * @param message     the error summary
+     * @param fieldErrors the field-specific validation errors
+     * @param <T>         the payload type
+     * @return an error {@code ApiResponse}
+     */
+    public static <T> ApiResponse<T> fieldError(int code, String message, Map<String, List<String>> fieldErrors) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .fieldErrors(Collections.unmodifiableMap(fieldErrors))
                 .build();
     }
 }

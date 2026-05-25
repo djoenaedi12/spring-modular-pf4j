@@ -49,18 +49,22 @@ public abstract class BaseEntity {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
+    @Filterable
     private Instant createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at")
+    @Filterable
     private Instant updatedAt;
 
     @CreatedBy
     @Column(name = "created_by", updatable = false, length = 50)
+    @Filterable
     private String createdBy;
 
     @LastModifiedBy
     @Column(name = "updated_by", length = 50)
+    @Filterable
     private String updatedBy;
 
     @Column(name = "source_id")
@@ -68,9 +72,13 @@ public abstract class BaseEntity {
 
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "lifecycle_status")
+    @Filterable
     private LifecycleStatus lifecycleStatus;
 
     @Version
     @Column(name = "version")
     private Integer version;
+
+    @Column(name = "upload_id")
+    private Long uploadId;
 }

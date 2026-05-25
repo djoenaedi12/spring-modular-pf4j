@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class DataUpl extends BaseModel {
     private String resource;
+    private String instructionNo;
     private String fileName;
     private int totalRows;
     private int validRows;

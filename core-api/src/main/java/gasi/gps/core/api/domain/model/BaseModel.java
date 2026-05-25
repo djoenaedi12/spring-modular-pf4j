@@ -32,4 +32,5 @@ public abstract class BaseModel {
     private Long sourceId;
     private LifecycleStatus lifecycleStatus;
     private Integer version;
+    private Long uploadId;
 }

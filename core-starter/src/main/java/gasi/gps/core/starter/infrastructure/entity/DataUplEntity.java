@@ -27,7 +27,12 @@ public class DataUplEntity extends BaseEntity {
     @Filterable
     private String resource;
 
+    @Column(name = "instruction_no", nullable = false, length = 255)
+    @Filterable
+    private String instructionNo;
+
     @Column(name = "file_name", nullable = false, length = 255)
+    @Filterable
     private String fileName;
 
     @Column(name = "total_rows", nullable = false)
@@ -44,6 +49,7 @@ public class DataUplEntity extends BaseEntity {
 
     @Column(name = "upload_status")
     @Enumerated(EnumType.ORDINAL)
+    @Filterable
     private UploadStatus uploadStatus;
 
     @Lob

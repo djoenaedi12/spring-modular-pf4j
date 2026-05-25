@@ -16,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class DataUplSummaryResponse extends BaseSummaryResponse {
+    private String instructionNo;
     private String fileName;
     private int totalRows;
     private int validRows;

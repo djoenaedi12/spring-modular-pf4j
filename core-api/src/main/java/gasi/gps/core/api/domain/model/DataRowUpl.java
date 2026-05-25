@@ -17,5 +17,8 @@ public class DataRowUpl extends BaseModel {
     private String rowData;
     private UploadRowStatus rowStatus;
     private String identifier;
+    private String lookupValue1;
+    private String lookupValue2;
+    private String lookupValue3;
     private String errorMessage;
 }

@@ -1,6 +1,7 @@
 package gasi.gps.core.starter.presentation.handler;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -158,11 +159,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleValidation(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
-                .collect(Collectors.toList());
-        LOG.warn("Validation failed: {}", errors);
-        return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Validation failed", errors);
+        Map<String, List<String>> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.groupingBy(
+                        fe -> fe.getField(),
+                        Collectors.mapping(fe -> fe.getDefaultMessage(), Collectors.toList())));
+        LOG.warn("Validation failed: {}", fieldErrors);
+        return ApiResponse.fieldError(HttpStatus.BAD_REQUEST.value(), "Validation failed", fieldErrors);
     }
 
     /**
