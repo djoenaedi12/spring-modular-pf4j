@@ -105,9 +105,11 @@ public abstract class BaseReadController<SRS, DRS> {
     /**
      * Default response projection for search list/page when callers omit fields.
      *
-     * <p>Subclasses should override this with resource-specific default table
+     * <p>
+     * Subclasses should override this with resource-specific default table
      * columns. The fallback keeps only {@code id} to avoid accidentally exposing
-     * a full summary DTO on unprojected requests.</p>
+     * a full summary DTO on unprojected requests.
+     * </p>
      *
      * @return default public DTO field names
      */
@@ -176,5 +178,27 @@ public abstract class BaseReadController<SRS, DRS> {
                 request.getFilter(),
                 request.getSorts() != null ? request.getSorts() : Collections.emptyList());
         return ApiResponse.ok(ResponseProjection.projectPage(result, resolveProjectionFields(request)));
+    }
+
+    @PostMapping("/lookup/search/page")
+    @PreAuthorize("hasPermission(this, 'LOOKUP')")
+    public ApiResponse<PageResult<?>> lookupPaged(@RequestBody SearchRequest request) {
+        PageResult<SRS> result = service.findAll(
+                request.getPage() != null ? request.getPage() : 0,
+                request.getSize() != null ? request.getSize() : 10,
+                request.getFilter(),
+                request.getSorts() != null ? request.getSorts() : Collections.emptyList());
+
+        return ApiResponse.ok(ResponseProjection.projectPage(result, resolveLookupFields(request)));
+    }
+
+    protected List<String> getDefaultLookupFields() {
+        return getDefaultSummaryFields();
+    }
+
+    private List<String> resolveLookupFields(SearchRequest request) {
+        return request.getFields() == null || request.getFields().isEmpty()
+                ? getDefaultLookupFields()
+                : request.getFields();
     }
 }
