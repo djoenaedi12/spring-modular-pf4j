@@ -23,6 +23,7 @@
         <module>plugins/ldap-plugin</module>
         <module>plugins/storage-plugin</module>
         <module>plugins/storage-a3s-plugin</module>
+        <module>plugins/data-upload-plugin</module>
     </modules>
 
     <properties>
