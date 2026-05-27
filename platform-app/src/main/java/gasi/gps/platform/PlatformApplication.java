@@ -34,12 +34,11 @@ import gasi.gps.platform.bootstrap.PlatformScanPackages;
  * @see PluginBootstrap
  * @since 1.0.0
  */
-@EntityScan(basePackages = PlatformScanPackages.PLUGINS)
-@EnableJpaRepositories(basePackages = PlatformScanPackages.PLUGINS)
+@EntityScan(basePackages = PlatformScanPackages.PLUGIN_ROOT)
+@EnableJpaRepositories(basePackages = PlatformScanPackages.PLUGIN_ROOT)
 @SpringBootApplication(scanBasePackages = {
         PlatformScanPackages.PLATFORM,
-        PlatformScanPackages.CORE_STARTER,
-        PlatformScanPackages.PLUGINS
+        PlatformScanPackages.CORE_STARTER
 })
 public class PlatformApplication {
 

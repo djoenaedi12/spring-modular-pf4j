@@ -2,10 +2,14 @@ package gasi.gps.platform.infrastructure.config;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import javax.sql.DataSource;
 
@@ -107,26 +111,52 @@ public class PluginFlywayConfig {
         List<URL> urls = new ArrayList<>();
         ClassLoader parent = Thread.currentThread().getContextClassLoader();
 
+        for (PluginWrapper wrapper : pluginManager.getStartedPlugins()) {
+            ClassLoader pluginCl = pluginManager.getPluginClassLoader(wrapper.getPluginId());
+            if (pluginCl instanceof URLClassLoader urlCl) {
+                for (URL url : urlCl.getURLs()) {
+                    urls.add(url);
+                    locations.addAll(discoverMigrationLocations(url));
+                    LOG.debug("[Flyway] Added classpath URL from plugin '{}': {}", wrapper.getPluginId(), url);
+                }
+            }
+        }
+
         for (FlywayMigrationExtension ext : extensions) {
             String pluginId = resolvePluginId(pluginManager, ext);
             String location = ext.getMigrationLocation();
             locations.add(location);
-
-            ClassLoader pluginCl = pluginManager.getPluginClassLoader(pluginId);
-            if (pluginCl instanceof URLClassLoader urlCl) {
-                for (URL url : urlCl.getURLs()) {
-                    urls.add(url);
-                    LOG.debug("[Flyway] Added classpath URL from plugin '{}': {}", pluginId, url);
-                }
-                LOG.info("[Flyway] Plugin '{}' registered → location: {}", pluginId, location);
-            } else {
-                LOG.warn("[Flyway] Plugin '{}' classloader is not a URLClassLoader, skipping: {}",
-                        pluginId, pluginCl != null ? pluginCl.getClass().getName() : "null");
-            }
+            LOG.info("[Flyway] Plugin '{}' registered -> location: {}", pluginId, location);
         }
 
         return urls.isEmpty() ? parent
                 : new URLClassLoader(urls.toArray(new URL[0]), parent);
+    }
+
+    private Set<String> discoverMigrationLocations(URL pluginUrl) {
+        Set<String> locations = new LinkedHashSet<>();
+        if (!"file".equals(pluginUrl.getProtocol()) || !pluginUrl.getPath().endsWith(".jar")) {
+            return locations;
+        }
+
+        try (JarFile jar = new JarFile(Paths.get(pluginUrl.toURI()).toFile())) {
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                String name = entries.nextElement().getName();
+                if (!name.startsWith("db/migration/") || !name.endsWith(".sql")) {
+                    continue;
+                }
+
+                String relative = name.substring("db/migration/".length());
+                int slash = relative.indexOf('/');
+                if (slash > 0) {
+                    locations.add("classpath:db/migration/" + relative.substring(0, slash));
+                }
+            }
+        } catch (Exception ex) {
+            LOG.warn("[Flyway] Could not inspect plugin jar for migrations: {}", pluginUrl, ex);
+        }
+        return locations;
     }
 
     /**
